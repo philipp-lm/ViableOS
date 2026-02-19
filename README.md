@@ -122,7 +122,7 @@ Every incomplete system develops **organizational pathologies** — predictable 
 
 **Philipp Enderle** — Engineer turned strategy consultant turned founder.
 
-Background: Mechanical Engineering (KIT, B.Sc.) and Engineering & Management (TU Munich, M.Sc., UC Berkeley). Then 7+ years of strategy consulting at Deloitte and Berylls by AlixPartners — designing organizational transformations, target operating models, and digital agile organizations for DAX automotive OEMs (800+ FTE scope).
+Background: Mechanical Engineering (KIT, B.Sc.) and Engineering & Management (TU Munich, M.Sc., UC Berkeley). Then 9 years of strategy consulting at Deloitte and Berylls by AlixPartners — designing organizational transformations, target operating models, and digital agile organizations for DAX automotive OEMs (800+ FTE scope).
 
 After seeing the same structural pathologies in AI agent systems that I'd diagnosed in billion-dollar companies — missing coordination, no audit, zero strategic foresight — I started building ViableOS to bridge organizational cybernetics with multi-agent AI. My own healthcare SaaS ([Mola](https://github.com/philipp-lm/mola_app)) serves as the first production test case.
 
