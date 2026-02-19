@@ -118,6 +118,17 @@ Every incomplete system develops **organizational pathologies** — predictable 
 - 50+ years of validation across biology, corporations, and governments
 - The only organizational model proven to be both necessary and sufficient for viability
 
+## About the Author
+
+**Philipp Enderle** — Strategy consultant turned founder.
+
+After years of applying the Viable System Model to organizational transformations at DAX corporations (automotive OEMs, Tier-1 suppliers) at [Berylls by AlixPartners](https://berylls.com), I saw the same structural problems emerge in AI agent systems that I'd diagnosed in billion-dollar companies: missing coordination, no audit function, zero strategic foresight, identity crisis.
+
+Now I'm building ViableOS to bridge the gap between 50 years of organizational cybernetics and the emerging world of multi-agent AI — while also running my own SaaS ([Mola](https://github.com/philipp-lm/mola_app), a therapy practice management tool) as the first production test case.
+
+- [LinkedIn](https://www.linkedin.com/in/philipp-enderle/)
+- [GitHub](https://github.com/philipp-lm)
+
 ## Get Involved
 
 ⭐ Star this repo to follow progress
