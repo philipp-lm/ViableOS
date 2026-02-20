@@ -93,14 +93,14 @@ VSM was developed by Stafford Beer in the 1970s. It defines the minimal set of c
 
 I'm building this because I ran into the exact same organizational pathologies in my own multi-agent setup (a healthcare SaaS) that I used to diagnose in large corporations as a strategy consultant. More context in the blog series:
 
-1. [Your AI Agents Need an Org Chart — But Not the Kind You Think](#) *(draft)*
+1. [Your AI Agents Need an Org Chart — But Not the Kind You Think](https://dev.to/philippenderle/your-ai-agents-need-an-org-chart-but-not-the-kind-you-think-2fg7)
 
 ## Contributing
 
 This is early-stage. If you're interested in multi-agent organization, [open an issue](../../issues) or reach out.
 
 - [Newsletter](https://buttondown.com/viableos)
-- [Blog series on Dev.to](#)
+- [Blog series on Dev.to](https://dev.to/philippenderle)
 
 ## License
 
