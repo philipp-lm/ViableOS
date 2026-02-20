@@ -1,0 +1,78 @@
+viable_system:
+  name: "My Restaurant"
+  runtime: "openclaw"
+
+  budget:
+    monthly_usd: 80
+    strategy: "frugal"
+
+  identity:
+    purpose: ""
+    values:
+      - "Customer satisfaction above everything"
+      - "Quality over quantity"
+      - "Consistency builds trust"
+    decisions_requiring_human:
+      - "Menu changes"
+      - "Supplier contracts"
+      - "Event bookings over 20 people"
+
+  system_1:
+    - name: "Kitchen"
+      purpose: "Plan menus, manage recipes, and optimize food costs"
+      autonomy: "Can reorder standard supplies. Menu changes need approval."
+      tools: [inventory, supplier-research, recipe-management, cost-analysis]
+
+    - name: "Front-of-House"
+      purpose: "Manage reservations, service standards, and guest experience"
+      autonomy: "Can handle standard reservations. Large events need approval."
+      tools: [reservation-system, email, guest-feedback, scheduling]
+
+    - name: "Marketing & Reservations"
+      purpose: "Attract guests and fill seats"
+      autonomy: "Can draft social media posts. Paid campaigns need approval."
+      tools: [social-media, email-campaigns, web-analytics, copywriting]
+
+  system_2:
+    coordination_rules:
+      - trigger: "Marketing promotes a special event"
+        action: "Notify Kitchen to prepare menu and Front-of-House to plan service"
+      - trigger: "Kitchen changes the menu"
+        action: "Notify Front-of-House for training and Marketing for website update"
+      - trigger: "Front-of-House reports high demand"
+        action: "Alert Kitchen for prep adjustment and Marketing to manage expectations"
+
+  system_3:
+    reporting_rhythm: "weekly"
+    resource_allocation: "Kitchen: 50%, Front-of-House: 30%, Marketing: 20%"
+
+  system_3_star:
+    schedule: "weekly"
+    checks:
+      - name: "Food Cost"
+        target: "Kitchen"
+        method: "Compare actual food cost percentage against target (< 30%)."
+      - name: "Guest Satisfaction"
+        target: "Front-of-House"
+        method: "Review last 10 guest reviews for recurring issues."
+    on_failure: "Escalate to human"
+
+  system_4:
+    monitoring:
+      competitors: ["Other restaurants in the area"]
+      technology: ["Reservation platforms", "Delivery app changes"]
+      regulation: ["Food safety regulations", "Labor laws"]
+
+  human_in_the_loop:
+    notification_channel: "whatsapp"
+    approval_required:
+      - "menu_changes"
+      - "supplier_contracts"
+      - "large_event_bookings"
+    review_required:
+      - "social_media_posts"
+      - "weekly_food_cost_report"
+    emergency_alerts:
+      - "food_safety_issue"
+      - "major_negative_review"
+      - "budget_exceeded_95"

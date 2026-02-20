@@ -1,0 +1,89 @@
+viable_system:
+  name: "My Marketing Agency"
+  runtime: "openclaw"
+
+  budget:
+    monthly_usd: 200
+    strategy: "balanced"
+
+  identity:
+    purpose: ""
+    values:
+      - "Data-driven decisions"
+      - "Customer satisfaction above everything"
+      - "Transparency and honesty"
+    decisions_requiring_human:
+      - "Campaign budgets over $500"
+      - "Client proposals"
+      - "Publishing on client channels"
+
+  system_1:
+    - name: "Strategy"
+      purpose: "Develop marketing strategies and campaign plans"
+      autonomy: "Can research and analyze independently. Strategy proposals need approval."
+      tools: [research, data-analysis, reporting, proposal-writing]
+
+    - name: "Creative"
+      purpose: "Produce content, visuals, and copy"
+      autonomy: "Can draft independently. Final creative needs client approval."
+      tools: [writing, editing, image-generation, video-editing, copywriting]
+
+    - name: "Performance"
+      purpose: "Run and optimize paid campaigns"
+      autonomy: "Can optimize within budget. New campaigns need approval."
+      tools: [ad-management, web-analytics, seo-analysis, reporting]
+
+    - name: "Client Relations"
+      purpose: "Manage client communication and reporting"
+      autonomy: "Can prepare reports independently. Client communications need review."
+      tools: [email, crm, reporting, proposal-writing]
+
+  system_2:
+    coordination_rules:
+      - trigger: "Strategy defines a new campaign"
+        action: "Brief Creative on deliverables and Performance on targets"
+      - trigger: "Creative delivers assets"
+        action: "Notify Performance to launch and Client Relations to inform client"
+      - trigger: "Performance detects underperforming campaign"
+        action: "Alert Strategy to reassess and Creative for asset refresh"
+      - trigger: "Client Relations receives new brief"
+        action: "Notify Strategy to begin planning"
+
+  system_3:
+    reporting_rhythm: "weekly"
+    resource_allocation: "Strategy: 20%, Creative: 35%, Performance: 30%, Client: 15%"
+
+  system_3_star:
+    schedule: "bi-weekly"
+    checks:
+      - name: "Campaign ROI"
+        target: "Performance"
+        method: "Compare actual ROAS against targets for last 5 campaigns."
+      - name: "Creative Quality"
+        target: "Creative"
+        method: "Review last 3 deliverables against brand guidelines."
+      - name: "Client Satisfaction"
+        target: "Client Relations"
+        method: "Check response times and client feedback scores."
+    on_failure: "Escalate to human immediately"
+
+  system_4:
+    monitoring:
+      competitors: ["Competing agencies", "In-house teams at clients"]
+      technology: ["New ad platforms", "AI creative tools", "Analytics updates"]
+      regulation: ["Advertising standards", "Data privacy (GDPR)", "Platform policy changes"]
+
+  human_in_the_loop:
+    notification_channel: "slack"
+    approval_required:
+      - "campaign_budgets"
+      - "client_proposals"
+      - "publishing_on_client_channels"
+    review_required:
+      - "creative_deliverables"
+      - "strategy_recommendations"
+      - "client_reports"
+    emergency_alerts:
+      - "campaign_overspend"
+      - "client_escalation"
+      - "budget_exceeded_95"

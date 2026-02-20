@@ -1,0 +1,82 @@
+viable_system:
+  name: "My Consulting Firm"
+  runtime: "openclaw"
+
+  budget:
+    monthly_usd: 200
+    strategy: "balanced"
+
+  identity:
+    purpose: ""
+    values:
+      - "Quality over quantity"
+      - "Data-driven decisions"
+      - "Transparency and honesty"
+    decisions_requiring_human:
+      - "Client proposals and pricing"
+      - "Engagement scope changes"
+      - "Publishing thought leadership"
+
+  system_1:
+    - name: "Business Development"
+      purpose: "Find clients, write proposals, close deals"
+      autonomy: "Can research leads independently. Proposals and pricing need approval."
+      tools: [crm, lead-tracking, outreach, proposal-writing, research]
+
+    - name: "Engagement Delivery"
+      purpose: "Execute client projects and deliver results"
+      autonomy: "Can work within scope independently. Scope changes need approval."
+      tools: [data-analysis, reporting, research, writing, project-management]
+
+    - name: "Knowledge & IP"
+      purpose: "Capture expertise, build frameworks, publish thought leadership"
+      autonomy: "Can document and organize independently. Publishing needs approval."
+      tools: [writing, research, documentation, data-analysis]
+
+  system_2:
+    coordination_rules:
+      - trigger: "Business Development closes a new engagement"
+        action: "Brief Engagement Delivery on scope, timeline, and expectations"
+      - trigger: "Engagement Delivery completes a project"
+        action: "Notify Knowledge & IP to capture learnings and Business Development for reference"
+      - trigger: "Knowledge & IP publishes new framework"
+        action: "Notify Business Development for use in proposals"
+
+  system_3:
+    reporting_rhythm: "weekly"
+    resource_allocation: "Delivery: 60%, BD: 25%, Knowledge: 15%"
+
+  system_3_star:
+    schedule: "bi-weekly"
+    checks:
+      - name: "Deliverable Quality"
+        target: "Engagement Delivery"
+        method: "Review last deliverable against engagement brief and quality standards."
+      - name: "Pipeline Health"
+        target: "Business Development"
+        method: "Check conversion rates, pipeline value, and proposal win rate."
+      - name: "IP Freshness"
+        target: "Knowledge & IP"
+        method: "Check age of top 5 frameworks — any older than 6 months?"
+    on_failure: "Escalate to human"
+
+  system_4:
+    monitoring:
+      competitors: ["Other consulting firms in your niche", "Big 4 overlap"]
+      technology: ["AI tools for consulting", "Data analysis platforms"]
+      regulation: ["Industry-specific regulations", "Data privacy"]
+
+  human_in_the_loop:
+    notification_channel: "email"
+    approval_required:
+      - "client_proposals"
+      - "scope_changes"
+      - "publishing"
+    review_required:
+      - "deliverables"
+      - "thought_leadership_drafts"
+      - "strategic_recommendations"
+    emergency_alerts:
+      - "client_escalation"
+      - "deadline_at_risk"
+      - "budget_exceeded_95"

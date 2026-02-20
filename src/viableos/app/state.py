@@ -1,4 +1,4 @@
-"""Session state management for the ViableOS wizard."""
+"""Session state management and preset data for the ViableOS wizard."""
 
 from __future__ import annotations
 
@@ -10,39 +10,137 @@ import yaml
 
 TEMPLATES_DIR = Path(__file__).parent.parent / "templates"
 
+# ── Template metadata ────────────────────────────────────────────────────────
+
 TEMPLATE_INFO = {
     "saas-startup": {
         "name": "SaaS Startup",
-        "icon": "rocket",
+        "tagline": "Build, ship, and sell software",
         "description": "Product Development, Operations, Go-to-Market",
         "units": 3,
     },
     "ecommerce": {
         "name": "E-Commerce",
-        "icon": "shopping_bags",
+        "tagline": "Source, sell, ship, support",
         "description": "Sourcing, Store, Fulfillment, Customer Service",
         "units": 4,
     },
     "freelance-agency": {
         "name": "Freelance / Agency",
-        "icon": "briefcase",
+        "tagline": "Find clients, deliver, grow",
         "description": "Client Acquisition, Project Delivery, Knowledge",
         "units": 3,
     },
     "content-creator": {
         "name": "Content Creator",
-        "icon": "art",
+        "tagline": "Create, distribute, monetize",
         "description": "Content Production, Community, Monetization",
         "units": 3,
     },
     "personal-productivity": {
         "name": "Personal Productivity",
-        "icon": "brain",
+        "tagline": "Focus on what matters",
         "description": "Deep Work, Admin, Learning",
+        "units": 3,
+    },
+    "marketing-agency": {
+        "name": "Marketing Agency",
+        "tagline": "Strategy, campaigns, results",
+        "description": "Strategy, Creative, Performance, Client Relations",
+        "units": 4,
+    },
+    "restaurant": {
+        "name": "Restaurant / Hospitality",
+        "tagline": "Cook, serve, grow",
+        "description": "Kitchen, Front-of-House, Marketing & Reservations",
+        "units": 3,
+    },
+    "consulting": {
+        "name": "Consulting Firm",
+        "tagline": "Advise, deliver, scale",
+        "description": "Business Development, Engagement Delivery, Knowledge & IP",
         "units": 3,
     },
 }
 
+# ── Value presets ────────────────────────────────────────────────────────────
+
+VALUE_PRESETS = [
+    "Ship fast, fix fast",
+    "User experience above technical elegance",
+    "Customer satisfaction above everything",
+    "Quality over quantity",
+    "Transparency and honesty",
+    "Security and privacy first",
+    "Data-driven decisions",
+    "Sustainability and long-term thinking",
+    "Innovation over tradition",
+    "Consistency builds trust",
+    "Speed over perfection",
+    "Reliability over features",
+]
+
+# ── Autonomy presets ─────────────────────────────────────────────────────────
+
+AUTONOMY_LEVELS = {
+    "full": "Fully autonomous — can act without asking",
+    "report": "Can act, but must report daily",
+    "approve": "Can prepare, but needs approval to execute",
+    "instruct": "Only acts on explicit instructions",
+    "observe": "Read-only — can observe and suggest",
+}
+
+# ── Tool presets by category ─────────────────────────────────────────────────
+
+TOOL_CATEGORIES = {
+    "Development": ["github", "testing", "code-review", "ci-cd", "debugging"],
+    "Communication": ["email", "chat", "slack", "whatsapp", "video-calls"],
+    "Content": ["writing", "editing", "research", "image-generation", "video-editing"],
+    "Analytics": ["seo-analysis", "web-analytics", "reporting", "data-analysis"],
+    "Commerce": ["shopify-api", "payment-processing", "inventory", "pricing-tools"],
+    "Operations": ["ssh", "docker", "monitoring", "log-analysis", "deployment"],
+    "Marketing": ["social-media", "ad-management", "copywriting", "email-campaigns"],
+    "CRM": ["crm", "lead-tracking", "outreach", "proposal-writing"],
+}
+
+# ── HiTL presets ─────────────────────────────────────────────────────────────
+
+APPROVAL_PRESETS = [
+    "Deployments to production",
+    "Publishing content",
+    "Customer data access",
+    "Pricing changes",
+    "Sending communications on my behalf",
+    "New supplier or partner deals",
+    "Financial transactions",
+    "Code changes to core systems",
+    "Hiring or team changes",
+]
+
+REVIEW_PRESETS = [
+    "Feature implementations",
+    "Content drafts",
+    "Marketing campaigns",
+    "Financial reports",
+    "Customer responses",
+    "Strategic recommendations",
+    "Weekly summaries",
+]
+
+EMERGENCY_PRESETS = [
+    "Data leak detected",
+    "Security vulnerability",
+    "Budget exceeded 95%",
+    "System downtime",
+    "Negative viral content",
+    "Legal compliance issue",
+    "Customer escalation",
+]
+
+NOTIFICATION_CHANNELS = ["whatsapp", "telegram", "email", "slack", "discord"]
+
+
+# ── Session state management ─────────────────────────────────────────────────
 
 def init_state() -> None:
     """Initialize session state with defaults."""

@@ -8,18 +8,10 @@ import streamlit as st
 
 
 def step_header(step: int, total: int, title: str, subtitle: str = "") -> None:
-    """Render a wizard step header with progress dots."""
-    dots = ""
-    for i in range(total):
-        if i < step:
-            dots += " :white_check_mark: "
-        elif i == step:
-            dots += " :large_blue_circle: "
-        else:
-            dots += " :white_circle: "
-
-    st.markdown(f"### Step {step + 1} of {total}: {title}")
-    st.markdown(dots)
+    """Render a wizard step header with progress bar."""
+    progress = (step) / total
+    st.progress(progress)
+    st.markdown(f"### Step {step + 1} of {total} — {title}")
     if subtitle:
         st.caption(subtitle)
     st.divider()
@@ -38,19 +30,19 @@ def nav_buttons(
 
     with cols[0]:
         if step > 0:
-            back = st.button(":arrow_left: Back", use_container_width=True)
+            back = st.button("< Back", use_container_width=True)
 
     with cols[2]:
         if step < total - 1:
             nxt = st.button(
-                f"{on_next} :arrow_right:",
+                f"{on_next} >",
                 use_container_width=True,
                 disabled=not can_proceed,
                 type="primary",
             )
         else:
             nxt = st.button(
-                ":white_check_mark: Generate",
+                "Generate",
                 use_container_width=True,
                 disabled=not can_proceed,
                 type="primary",
@@ -59,40 +51,82 @@ def nav_buttons(
     return back, nxt
 
 
-def info_card(title: str, value: str, icon: str = "") -> None:
-    """Render a metric-style info card."""
-    prefix = f":{icon}: " if icon else ""
-    st.metric(label=f"{prefix}{title}", value=value)
+def multi_select_chips(
+    label: str,
+    options: list[str],
+    default: list[str] | None = None,
+    key: str = "",
+    help_text: str = "",
+) -> list[str]:
+    """Multi-select presented as a multiselect widget."""
+    if help_text:
+        st.caption(help_text)
+    return st.multiselect(
+        label,
+        options=options,
+        default=default or [],
+        key=key,
+    )
 
 
-def unit_card(unit: dict[str, Any], index: int) -> dict[str, Any]:
-    """Render an editable S1 unit card. Returns the (possibly edited) unit."""
-    with st.expander(f":gear: **{unit.get('name', f'Unit {index + 1}')}**", expanded=True):
+def unit_editor(unit: dict[str, Any], index: int, autonomy_options: dict[str, str], tool_options: dict[str, list[str]]) -> dict[str, Any]:
+    """Render an editable S1 unit card with multi-choice for autonomy and tools."""
+    with st.expander(f"**{unit.get('name', f'Unit {index + 1}')}**", expanded=True):
         name = st.text_input("Name", value=unit.get("name", ""), key=f"unit_name_{index}")
         purpose = st.text_input("Purpose", value=unit.get("purpose", ""), key=f"unit_purpose_{index}")
-        autonomy = st.text_area(
-            "Autonomy (what can this agent do without asking?)",
-            value=unit.get("autonomy", ""),
-            key=f"unit_autonomy_{index}",
-            height=68,
+
+        st.markdown("**Autonomy level**")
+        current_autonomy = unit.get("autonomy", "")
+        autonomy_keys = list(autonomy_options.keys())
+        default_idx = 0
+        for i, (k, v) in enumerate(autonomy_options.items()):
+            if current_autonomy and (k in current_autonomy.lower() or current_autonomy == v):
+                default_idx = i
+                break
+
+        selected_autonomy = st.radio(
+            "Pick an autonomy level",
+            options=autonomy_keys,
+            format_func=lambda x: autonomy_options[x],
+            index=default_idx,
+            key=f"unit_autonomy_radio_{index}",
+            label_visibility="collapsed",
         )
-        tools_str = ", ".join(unit.get("tools", []))
-        tools_input = st.text_input(
-            "Tools (comma-separated)",
-            value=tools_str,
-            key=f"unit_tools_{index}",
+        autonomy_custom = st.text_input(
+            "Customize autonomy (optional)",
+            value="" if selected_autonomy else current_autonomy,
+            key=f"unit_autonomy_custom_{index}",
+            placeholder="Add specifics, e.g. 'Can fix bugs alone, features need approval'",
         )
-        tools = [t.strip() for t in tools_input.split(",") if t.strip()] if tools_input else []
+
+        st.markdown("**Tools**")
+        existing_tools = unit.get("tools", [])
+        all_tool_flat = []
+        for cat_tools in tool_options.values():
+            all_tool_flat.extend(cat_tools)
+        pre_selected = [t for t in existing_tools if t in all_tool_flat]
+
+        selected_tools = st.multiselect(
+            "Select from common tools",
+            options=all_tool_flat,
+            default=pre_selected,
+            key=f"unit_tools_multi_{index}",
+            label_visibility="collapsed",
+        )
+        extra_tools_str = st.text_input(
+            "Additional tools (comma-separated)",
+            value=", ".join(t for t in existing_tools if t not in all_tool_flat),
+            key=f"unit_tools_extra_{index}",
+            placeholder="e.g. custom-api, internal-tool",
+        )
+        extra_tools = [t.strip() for t in extra_tools_str.split(",") if t.strip()] if extra_tools_str else []
+
+        final_autonomy = autonomy_custom if autonomy_custom else autonomy_options.get(selected_autonomy, "")
+        all_tools = selected_tools + [t for t in extra_tools if t not in selected_tools]
 
         return {
             "name": name,
             "purpose": purpose,
-            "autonomy": autonomy,
-            "tools": tools,
+            "autonomy": final_autonomy,
+            "tools": all_tools,
         }
-
-
-def vsm_system_badge(system: str, name: str, present: bool) -> None:
-    """Render a VSM system status badge."""
-    icon = ":white_check_mark:" if present else ":x:"
-    st.markdown(f"{icon} **{system}** — {name}")
