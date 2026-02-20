@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Viable System Model for AI Agent Teams</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #ffffff;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    padding: 48px 32px;
+    color: #0a0a2e;
+  }
+
+  .container {
+    max-width: 1440px;
+    width: 100%;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+  .header h1 {
+    font-size: 32px;
+    font-weight: 700;
+    color: #00235c;
+    letter-spacing: -0.5px;
+    margin-bottom: 8px;
+  }
+  .header p {
+    font-size: 16px;
+    color: #6b7280;
+    font-weight: 400;
+  }
+
+  .diagram {
+    display: grid;
+    grid-template-columns: 320px 1fr 320px;
+    grid-template-rows: auto auto auto;
+    gap: 16px;
+    align-items: start;
+  }
+
+  /* --- System description boxes --- */
+  .sys-box {
+    border-radius: 14px;
+    padding: 20px;
+    position: relative;
+    transition: transform 0.15s ease;
+  }
+  .sys-box:hover { transform: translateY(-2px); }
+
+  .sys-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 6px;
+    color: #fff;
+    margin-bottom: 8px;
+    letter-spacing: 0.5px;
+  }
+  .sys-box h4 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    line-height: 1.3;
+  }
+  .sys-box ul {
+    list-style: none;
+    padding: 0;
+  }
+  .sys-box ul li {
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 2px 0 2px 18px;
+    position: relative;
+  }
+  .sys-box ul li::before {
+    content: "›";
+    position: absolute;
+    left: 3px;
+    font-weight: 700;
+    font-size: 15px;
+  }
+  .sys-box .example {
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.55);
+    border-radius: 8px;
+    font-size: 12px;
+    line-height: 1.5;
+    backdrop-filter: blur(4px);
+  }
+  .sys-box .example strong {
+    font-weight: 600;
+  }
+  .hl { font-weight: 600; }
+
+  /* S5 — Purple */
+  .s5 {
+    background: linear-gradient(135deg, #e8e6f5, #d8d4ef);
+    border: 2px solid #7068c0;
+    grid-column: 1; grid-row: 1;
+  }
+  .s5 .sys-badge { background: #7068c0; }
+  .s5 h4 { color: #3d3680; }
+  .s5 ul li { color: #4a4290; }
+  .s5 ul li::before { color: #7068c0; }
+  .s5 .example { color: #4a4290; }
+
+  /* S4 — Blue */
+  .s4 {
+    background: linear-gradient(135deg, #dff0fb, #c8e6f8);
+    border: 2px solid #3db3ea;
+    grid-column: 3; grid-row: 1;
+  }
+  .s4 .sys-badge { background: #3db3ea; }
+  .s4 h4 { color: #1a6d9e; }
+  .s4 ul li { color: #1d7aad; }
+  .s4 ul li::before { color: #3db3ea; }
+  .s4 .example { color: #1d7aad; }
+
+  /* S3* — Pink */
+  .s3star {
+    background: linear-gradient(135deg, #f5e0ec, #efd0e3);
+    border: 2px solid #c765a3;
+    grid-column: 1; grid-row: 2;
+  }
+  .s3star .sys-badge { background: #c765a3; }
+  .s3star h4 { color: #8a3d6e; }
+  .s3star ul li { color: #9b4a7d; }
+  .s3star ul li::before { color: #c765a3; }
+  .s3star .example { color: #9b4a7d; }
+
+  /* S3 — Pink */
+  .s3 {
+    background: linear-gradient(135deg, #f5e0ec, #efd0e3);
+    border: 2px solid #c765a3;
+    grid-column: 3; grid-row: 2;
+  }
+  .s3 .sys-badge { background: #c765a3; }
+  .s3 h4 { color: #8a3d6e; }
+  .s3 ul li { color: #9b4a7d; }
+  .s3 ul li::before { color: #c765a3; }
+  .s3 .example { color: #9b4a7d; }
+
+  /* S1 — Neutral white/gray */
+  .s1 {
+    background: linear-gradient(135deg, #f3f4f6, #e9eaed);
+    border: 2px solid #9ca3af;
+    grid-column: 1; grid-row: 3;
+  }
+  .s1 .sys-badge { background: #6b7280; }
+  .s1 h4 { color: #1f2937; }
+  .s1 ul li { color: #4b5563; }
+  .s1 ul li::before { color: #9ca3af; }
+  .s1 .example { color: #4b5563; }
+
+  .agent-list {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .agent-item {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 12px;
+    color: #4b5563;
+    padding: 4px 0;
+  }
+  .agent-item::before {
+    content: "●";
+    font-size: 7px;
+    color: #9ca3af;
+    flex-shrink: 0;
+    position: relative;
+    top: -1px;
+  }
+  .agent-item strong {
+    font-weight: 600;
+    color: #1f2937;
+  }
+
+  /* S2 — Orange */
+  .s2 {
+    background: linear-gradient(135deg, #fef0e0, #fde4c8);
+    border: 2px solid #eb8f40;
+    grid-column: 3; grid-row: 3;
+  }
+  .s2 .sys-badge { background: #eb8f40; }
+  .s2 h4 { color: #9a5520; }
+  .s2 ul li { color: #a86228; }
+  .s2 ul li::before { color: #eb8f40; }
+  .s2 .example { color: #a86228; }
+
+  /* Center: hand-drawn diagram */
+  .vsm-center {
+    grid-column: 2;
+    grid-row: 1 / 4;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0 8px;
+  }
+  .vsm-center img {
+    width: 100%;
+    max-width: 520px;
+    height: auto;
+    filter: drop-shadow(0 4px 20px rgba(0,0,0,0.08));
+  }
+
+  /* Environment row */
+  .env-row {
+    grid-column: 1 / 4;
+    grid-row: 4;
+    background: #f8f9fa;
+    border: 2px dashed #d1d5db;
+    border-radius: 14px;
+    padding: 18px 28px;
+    text-align: center;
+    margin-top: 8px;
+  }
+  .env-row h3 {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #6b7280;
+    margin-bottom: 8px;
+  }
+  .env-row p {
+    font-size: 13px;
+    color: #6b7280;
+    margin-bottom: 12px;
+  }
+  .env-tags {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .env-tag {
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 12px;
+    color: #4b5563;
+    font-weight: 500;
+  }
+
+  .footer {
+    text-align: center;
+    margin-top: 28px;
+    font-size: 11px;
+    color: #aaa;
+    letter-spacing: 0.3px;
+  }
+  .footer a { color: #7068c0; text-decoration: none; }
+  .footer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>Viable System Model for AI Agent Teams</h1>
+    <p>Stafford Beer's organizational cybernetics — applied to multi-agent systems</p>
+  </div>
+
+  <div class="diagram">
+
+    <!-- S5: Identity — top left -->
+    <div class="sys-box s5">
+      <span class="sys-badge">S5</span>
+      <h4>Identity & Purpose</h4>
+      <ul>
+        <li>Defines shared <span class="hl">values and ground rules</span> for all agents</li>
+        <li>Last decision-making authority (human-in-the-loop)</li>
+        <li>Balances S3 and S4 toward the system's <span class="hl">purpose</span></li>
+      </ul>
+      <div class="example">
+        <strong>Example:</strong> "Patient privacy above everything. Reliability over speed."
+      </div>
+    </div>
+
+    <!-- S4: Intelligence — top right -->
+    <div class="sys-box s4">
+      <span class="sys-badge">S4</span>
+      <h4>Intelligence</h4>
+      <ul>
+        <li>Monitors the <span class="hl">external environment</span>: competitors, tech, regulation</li>
+        <li>Processes information for <span class="hl">strategic adaptation</span></li>
+        <li>Recommends <span class="hl">future orientations</span> to S5</li>
+      </ul>
+      <div class="example">
+        <strong>Example:</strong> "New LLM could cut API costs 40%. Competitor launched feature X."
+      </div>
+    </div>
+
+    <!-- S3*: Audit — middle left -->
+    <div class="sys-box s3star">
+      <span class="sys-badge">S3*</span>
+      <h4>Audit</h4>
+      <ul>
+        <li>Bypasses the reporting chain — gets <span class="hl">unfiltered information</span></li>
+        <li><span class="hl">Verifies outputs</span> directly: did the agent actually do what it claims?</li>
+        <li>Your <span class="hl">hallucination firewall</span></li>
+      </ul>
+      <div class="example">
+        <strong>Example:</strong> "Check last 5 commits — did tests pass? Compare website to shipped features."
+      </div>
+    </div>
+
+    <!-- S3: Optimization — middle right -->
+    <div class="sys-box s3">
+      <span class="sys-badge">S3</span>
+      <h4>Optimization</h4>
+      <ul>
+        <li>Operative management of the <span class="hl">entire agent system</span></li>
+        <li><span class="hl">Resource allocation</span>: token budgets, compute, priorities</li>
+        <li>Detects <span class="hl">redundant work</span> and reallocates capacity</li>
+      </ul>
+      <div class="example">
+        <strong>Example:</strong> "Dev: 60%, Ops: 20%, GTM: 20%. Rebalance if KPIs missed."
+      </div>
+    </div>
+
+    <!-- S1: Operations — bottom left -->
+    <div class="sys-box s1">
+      <span class="sys-badge">S1</span>
+      <h4>Operations — Agent Teams</h4>
+      <ul>
+        <li>Autonomous units with own <span class="hl">purpose, tools, and autonomy</span></li>
+        <li>Each S1 is a mini viable system itself (<span class="hl">recursion</span>)</li>
+        <li>The agents doing <span class="hl">actual work</span> — every framework gets this right</li>
+      </ul>
+      <div class="agent-list">
+        <div class="agent-item"><strong>Product Dev</strong> — Build & stabilize. Bugs: autonomous. Features: approval.</div>
+        <div class="agent-item"><strong>Ops & Infra</strong> — Keep it running. Monitoring: autonomous. Deploys: approval.</div>
+        <div class="agent-item"><strong>Go-to-Market</strong> — Get customers. Drafting: autonomous. Publishing: approval.</div>
+      </div>
+      <div class="example">
+        <strong>Example:</strong> "3 agent teams, each with defined tools (GitHub, Docker, SEO) and clear autonomy boundaries."
+      </div>
+    </div>
+
+    <!-- S2: Coordination — bottom right -->
+    <div class="sys-box s2">
+      <span class="sys-badge">S2</span>
+      <h4>Coordination</h4>
+      <ul>
+        <li><span class="hl">Rules</span> that prevent agents from conflicting — like traffic lights, not a manager</li>
+        <li>Enables <span class="hl">self-regulation</span> between autonomous agent teams</li>
+        <li>Event-driven triggers, not polling</li>
+      </ul>
+      <div class="example">
+        <strong>Example:</strong> "If GTM mentions a feature → validate with Product Dev first."
+      </div>
+    </div>
+
+    <!-- Center: hand-drawn VSM diagram -->
+    <div class="vsm-center">
+      <img src="diagram_mola_colors.png" alt="Viable System Model — hand-drawn diagram">
+    </div>
+
+    <!-- Environment row -->
+    <div class="env-row">
+      <h3>Environment</h3>
+      <p>Each S1 agent team operates in — and adapts to — its own slice of the environment</p>
+      <div class="env-tags">
+        <span class="env-tag">Users & Customers</span>
+        <span class="env-tag">Competitors</span>
+        <span class="env-tag">Technology / LLMs</span>
+        <span class="env-tag">Infrastructure</span>
+        <span class="env-tag">Regulation (GDPR, ...)</span>
+        <span class="env-tag">Market Trends</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    <a href="https://viableos.dev">viableos.dev</a> — Stafford Beer's Viable System Model applied to AI agent orchestration
+  </div>
+
+</div>
+</body>
+</html>
