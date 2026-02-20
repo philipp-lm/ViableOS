@@ -1,142 +1,105 @@
 # ViableOS
 
-> Orchestration layer for multi-agent AI systems, based on [Stafford Beer's Viable System Model](https://en.wikipedia.org/wiki/Viable_system_model) (VSM).
+**The operating system for viable AI agent organizations.**
 
-**Status: v0.1 — Config schema + CLI available.** Star/watch to follow along.
+ViableOS applies the [Viable System Model](https://en.wikipedia.org/wiki/Viable_system_model) (VSM) to multi-agent AI systems. Instead of building a flat list of agents, you define a self-governing organization with operations, coordination, optimization, audit, intelligence, and policy — then deploy it to [OpenClaw](https://github.com/openclaw).
 
----
+## What it does
 
-## What is this?
+1. **Guided Setup Wizard** — 5-step web wizard walks you through identity, team structure, budget, models, and human-in-the-loop configuration
+2. **Organization Templates** — Start from SaaS Startup, E-Commerce, Freelance/Agency, Content Creator, or Personal Productivity
+3. **Smart Budget Calculator** — Maps your monthly USD budget to per-agent model allocations (frugal / balanced / performance)
+4. **SOUL.md Generator** — Creates personality files for every agent with roles, boundaries, coordination rules, and values
+5. **OpenClaw Package** — Generates a complete deployment package (`openclaw.json`, `install.sh`, agent workspaces)
+6. **Visual Dashboard** — VSM system map, budget donut, model routing chart, agent cards, HiTL summary
+7. **VSM Completeness Checker** — Validates your config against all 6 VSM systems with actionable suggestions
 
-Multi-agent frameworks (LangGraph, CrewAI, OpenAI Agents SDK, ...) give you agents, tools, and routing. They don't give you an organizational structure — who coordinates whom, who audits what, how to balance short-term execution with long-term adaptation.
-
-ViableOS adds that layer. It sits on top of your existing agent framework and provides the six control functions from VSM:
-
-```
-┌──────────────────────────────────────────────┐
-│  S5  Identity      Purpose, values, policies │
-│  S4  Intelligence  Environment monitoring    │
-│  S3  Optimization  Resource allocation       │
-│  S3* Audit         Independent verification  │
-│  S2  Coordination  Conflict prevention       │
-│  S1  Operations    Your actual agents        │
-├──────────────────────────────────────────────┤
-│  Runtime: OpenClaw · LangGraph · CrewAI      │
-│  LLMs:    Anthropic · OpenAI · Ollama · ...  │
-└──────────────────────────────────────────────┘
-```
-
-Framework-agnostic (pluggable runtime adapters). LLM-agnostic (any provider per system). Runs locally with Ollama or in the cloud.
-
-## Config example
-
-```yaml
-viable_system:
-  name: "My SaaS"
-  runtime: "openclaw"        # or: langgraph, crewai, openai-agents, cursor
-
-  identity:
-    purpose: "Help therapists focus on patients, not paperwork"
-    values: ["Privacy above everything", "Simplicity over feature bloat"]
-
-  system_1:
-    - name: "Product Development"
-      purpose: "Build and stabilize the software"
-      autonomy: "Can fix bugs independently. Features need approval."
-      tools: [github, ci-cd, testing]
-
-    - name: "Go-to-Market"
-      purpose: "Acquire first customers"
-      autonomy: "Can draft content independently. Publishing needs approval."
-      tools: [website-editing, seo-analysis, copywriting]
-
-  system_2:
-    coordination_rules:
-      - trigger: "Go-to-Market promises feature on website"
-        action: "Validate with Product Development before publishing"
-
-  system_3_star:
-    checks:
-      - target: "Go-to-Market"
-        method: "Compare website claims against shipped features"
-```
-
-## Install
+## Quick Start
 
 ```bash
-git clone https://github.com/philipp-lm/ViableOS.git
-cd ViableOS
+# Install
 pip install -e .
+
+# Launch the web app
+viableos app
+
+# Or use the CLI
+viableos init                          # Generate a starter config
+viableos check viableos.yaml           # Check VSM completeness
+viableos generate viableos.yaml        # Generate OpenClaw package
 ```
 
-## Usage
+## Web App
+
+The web app at `http://localhost:8501` provides:
+
+- **Setup Wizard** — Identity → Template → Customize Teams → Budget & Models → Human-in-the-Loop
+- **Dashboard** — Live VSM overview, budget allocation chart, model routing, agent cards, export
+- **Demo Mode** — Click any template in the sidebar to see a fully configured system instantly
+
+## Organization Templates
+
+| Template | Units | Best for |
+|---|---|---|
+| SaaS Startup | Product Dev, Operations, Go-to-Market | Technical founders |
+| E-Commerce | Sourcing, Store, Fulfillment, Customer Service | Online retailers |
+| Freelance/Agency | Client Acquisition, Delivery, Knowledge | Solo consultants |
+| Content Creator | Production, Community, Monetization | YouTubers, writers |
+| Personal Productivity | Deep Work, Admin, Learning | Anyone |
+
+## VSM Systems
+
+| System | Role | Agent |
+|---|---|---|
+| S1 | Operations — the units that do the actual work | Your custom units |
+| S2 | Coordination — prevents conflicts between units | Coordinator |
+| S3 | Optimization — allocates resources, weekly digest | Optimizer |
+| S3* | Audit — independent quality checks (different AI provider) | Auditor |
+| S4 | Intelligence — monitors environment, strategic briefs | Scout |
+| S5 | Identity — enforces values, prepares human decisions | Policy Guardian |
+
+## Budget Strategies
+
+| Strategy | S1 Routine | S1 Complex | S3 Optimizer | S4 Scout |
+|---|---|---|---|---|
+| Frugal | Haiku | Haiku | Haiku | Sonnet |
+| Balanced | Haiku | Sonnet | Sonnet | Opus |
+| Performance | Sonnet | Opus | Opus | Opus |
+
+The Auditor (S3*) always uses a different provider than S1 to prevent correlated hallucinations.
+
+## Human-in-the-Loop
+
+Three levels of human involvement:
+- **Approval Required** — Agent stops and waits for your OK
+- **Review Required** — Agent proceeds but sends results for your review
+- **Emergency Alerts** — Interrupts you immediately (data leak, security, budget exceeded)
+
+## CLI Reference
+
+```
+viableos --version           # Show version
+viableos init                # Generate starter YAML
+viableos check <file>        # VSM completeness report
+viableos generate <file>     # Generate OpenClaw package
+viableos app                 # Launch web wizard + dashboard
+```
+
+## Development
 
 ```bash
-# Generate a starter config
-viableos init
-
-# Check your config against VSM principles
-viableos check viableos.yaml
+pip install -e ".[dev]"
+pytest tests/ -v
+ruff check src/ tests/
 ```
-
-Example output:
-
-```
-━━━ ViableOS Viability Check ━━━
-
-  ✅ S1  Operations     3 units: Product Development, Operations, Go-to-Market
-  ✅ S2  Coordination   3 rules defined
-  ✅ S3  Optimization   Weekly reporting, resource allocation set
-  ✅ S3* Audit          3 checks: Code Quality, Content Accuracy, GDPR Compliance
-  ✅ S4  Intelligence   Monitoring: competitors, technology, regulation
-  ✅ S5  Identity       Purpose: "Help therapists focus on patients, not paperwork"
-
-Viability Score: 6/6 — Your system is fully viable.
-```
-
-See [`examples/healthcare-saas.yaml`](examples/healthcare-saas.yaml) for a complete config.
 
 ## Roadmap
 
-| Component | Status |
-|-----------|--------|
-| VSM config schema (YAML) | **v0.1** |
-| `viableos init` + `viableos check` CLI | **v0.1** |
-| OpenClaw runtime adapter | In progress |
-| Pathology detection | Planned |
-| Recursion engine (nested VSMs) | Planned |
-| LangGraph / CrewAI adapters | Planned |
-| Web dashboard | Planned |
-| Ollama / local LLM support | Planned |
-
-## Architecture
-
-ViableOS reads a YAML config, validates it against VSM principles, and deploys agents to your runtime of choice. It's a layer between your config and your agent framework — not a replacement.
-
-```
-     YAML Config  ──▶  VSM Core  ──▶  Runtime Adapter  ──▶  Your agents
-                       (parse,         (OpenClaw,
-                        validate)       LangGraph, ...)
-```
-
-## Background
-
-VSM was developed by Stafford Beer in the 1970s. It defines the minimal set of control functions any organization needs to remain viable — applicable to companies, governments, and (we think) AI agent teams.
-
-- Beer, S. — *Brain of the Firm* (1972)
-- Pfiffner, M. — *Die dritte Dimension des Organisierens* (Springer, 2020)
-
-I'm building this because I ran into the exact same organizational pathologies in my own multi-agent setup (a healthcare SaaS) that I used to diagnose in large corporations as a strategy consultant. More context in the blog series:
-
-1. [Your AI Agents Need an Org Chart — But Not the Kind You Think](https://dev.to/philippenderle/your-ai-agents-need-an-org-chart-but-not-the-kind-you-think-2fg7)
-
-## Contributing
-
-This is early-stage. If you're interested in multi-agent organization, [open an issue](../../issues) or reach out.
-
-- [Newsletter](https://buttondown.com/viableos)
-- [Blog series on Dev.to](https://dev.to/philippenderle)
+- [x] v0.1 — YAML schema, checker, CLI
+- [x] v0.2 — Web wizard, dashboard, budget calculator, OpenClaw generator, templates
+- [ ] v0.3 — Live agent monitoring, real OpenClaw integration
+- [ ] v0.4 — Multi-runtime support (LangGraph, CrewAI)
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT

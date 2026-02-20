@@ -1,0 +1,77 @@
+viable_system:
+  name: "My Freelance Business"
+  runtime: "openclaw"
+
+  budget:
+    monthly_usd: 100
+    strategy: "balanced"
+
+  identity:
+    purpose: ""
+    values:
+      - "Quality of work above volume"
+      - "Transparent communication with clients"
+    decisions_requiring_human:
+      - "Client proposals and pricing"
+      - "Project scope changes"
+      - "Publishing case studies"
+
+  system_1:
+    - name: "Client Acquisition"
+      purpose: "Find and qualify new clients"
+      autonomy: "Can research leads independently. Outreach needs approval."
+      tools: [linkedin, email-outreach, proposal-writing]
+
+    - name: "Project Delivery"
+      purpose: "Execute client work to high standards"
+      autonomy: "Can work independently within project scope. Scope changes need approval."
+      tools: [project-management, domain-specific-tools, documentation]
+
+    - name: "Knowledge Management"
+      purpose: "Capture expertise and build reusable assets"
+      autonomy: "Can document and organize independently. Publishing needs approval."
+      tools: [documentation, templates, case-studies]
+
+  system_2:
+    coordination_rules:
+      - trigger: "Client Acquisition closes a new project"
+        action: "Brief Project Delivery on scope, timeline, and client expectations"
+      - trigger: "Project Delivery completes a project"
+        action: "Notify Knowledge Management to capture learnings and create case study"
+      - trigger: "Knowledge Management creates a new case study"
+        action: "Notify Client Acquisition for use in proposals"
+
+  system_3:
+    reporting_rhythm: "weekly"
+    resource_allocation: "Delivery: 60%, Acquisition: 25%, Knowledge: 15%"
+
+  system_3_star:
+    schedule: "bi-weekly"
+    checks:
+      - name: "Deliverable Quality"
+        target: "Project Delivery"
+        method: "Review last deliverable against project brief and quality standards."
+      - name: "Pipeline Health"
+        target: "Client Acquisition"
+        method: "Check conversion rates and pipeline value vs. targets."
+    on_failure: "Escalate to human"
+
+  system_4:
+    monitoring:
+      competitors: ["Other freelancers in your niche", "Agencies"]
+      technology: ["Tools and platforms in your domain", "AI tools for your craft"]
+      regulation: ["Freelance tax regulations", "Contract law updates"]
+
+  human_in_the_loop:
+    notification_channel: "email"
+    approval_required:
+      - "client_proposals"
+      - "scope_changes"
+      - "publishing"
+    review_required:
+      - "deliverables"
+      - "case_studies"
+    emergency_alerts:
+      - "client_escalation"
+      - "deadline_at_risk"
+      - "budget_exceeded_95"

@@ -1,0 +1,77 @@
+viable_system:
+  name: "My Content Business"
+  runtime: "openclaw"
+
+  budget:
+    monthly_usd: 100
+    strategy: "balanced"
+
+  identity:
+    purpose: ""
+    values:
+      - "Authenticity over virality"
+      - "Consistency builds trust"
+    decisions_requiring_human:
+      - "Publishing content"
+      - "Sponsorship deals"
+      - "Pricing changes"
+
+  system_1:
+    - name: "Content Production"
+      purpose: "Create articles, videos, or newsletters"
+      autonomy: "Can research and draft independently. Publishing needs approval."
+      tools: [writing, editing, research, image-generation]
+
+    - name: "Community"
+      purpose: "Engage audience and manage interactions"
+      autonomy: "Can respond to comments independently. Direct messages need review."
+      tools: [social-media, email-newsletter, analytics]
+
+    - name: "Monetization"
+      purpose: "Manage revenue streams and partnerships"
+      autonomy: "Can track metrics independently. Deals and pricing need approval."
+      tools: [billing, outreach, partnership-management]
+
+  system_2:
+    coordination_rules:
+      - trigger: "Content Production publishes new content"
+        action: "Notify Community to promote and engage, Monetization to track performance"
+      - trigger: "Community identifies a trending topic"
+        action: "Notify Content Production as potential content idea"
+      - trigger: "Monetization secures a sponsorship"
+        action: "Brief Content Production on deliverables and timeline"
+
+  system_3:
+    reporting_rhythm: "weekly"
+    resource_allocation: "Content: 50%, Community: 30%, Monetization: 20%"
+
+  system_3_star:
+    schedule: "bi-weekly"
+    checks:
+      - name: "Content Quality"
+        target: "Content Production"
+        method: "Review last 3 pieces against quality standards and audience feedback."
+      - name: "Engagement Health"
+        target: "Community"
+        method: "Check engagement rates and sentiment trends."
+    on_failure: "Flag for human review"
+
+  system_4:
+    monitoring:
+      competitors: ["Other creators in your niche"]
+      technology: ["Platform algorithm changes", "New content tools"]
+      regulation: ["Advertising disclosure rules", "Copyright changes"]
+
+  human_in_the_loop:
+    notification_channel: "telegram"
+    approval_required:
+      - "publishing"
+      - "sponsorship_deals"
+      - "pricing_changes"
+    review_required:
+      - "content_drafts"
+      - "community_responses"
+    emergency_alerts:
+      - "account_issues"
+      - "negative_viral_content"
+      - "budget_exceeded_95"

@@ -1,0 +1,77 @@
+viable_system:
+  name: "My SaaS Startup"
+  runtime: "openclaw"
+
+  budget:
+    monthly_usd: 150
+    strategy: "balanced"
+
+  identity:
+    purpose: ""
+    values:
+      - "Ship fast, fix fast"
+      - "User experience above technical elegance"
+    decisions_requiring_human:
+      - "Pricing changes"
+      - "Publishing to production"
+      - "Customer communications"
+
+  system_1:
+    - name: "Product Development"
+      purpose: "Build and stabilize the software"
+      autonomy: "Can fix bugs independently. Features need approval."
+      tools: [github, testing, code-review]
+
+    - name: "Operations"
+      purpose: "Keep the platform running"
+      autonomy: "Can monitor and alert independently. Deployments need approval."
+      tools: [ssh, docker, log-analysis]
+
+    - name: "Go-to-Market"
+      purpose: "Acquire first customers"
+      autonomy: "Can draft content independently. Publishing needs approval."
+      tools: [website-editing, seo-analysis, copywriting]
+
+  system_2:
+    coordination_rules:
+      - trigger: "Go-to-Market mentions a feature on the website"
+        action: "Validate with Product Development that the feature exists"
+      - trigger: "Product Development deploys a new feature"
+        action: "Notify Go-to-Market for website update, Operations for monitoring"
+      - trigger: "Operations detects a performance issue after deployment"
+        action: "Notify Product Development with logs and priority tag"
+
+  system_3:
+    reporting_rhythm: "weekly"
+    resource_allocation: "Dev: 60%, Ops: 20%, Go-to-Market: 20%"
+
+  system_3_star:
+    schedule: "bi-weekly"
+    checks:
+      - name: "Code Quality"
+        target: "Product Development"
+        method: "Review last 5 commits. Did tests pass? Check coverage."
+      - name: "Content Accuracy"
+        target: "Go-to-Market"
+        method: "Compare website claims against actual shipped features."
+    on_failure: "Escalate to human immediately"
+
+  system_4:
+    monitoring:
+      competitors: ["Competitor A", "Competitor B"]
+      technology: ["New framework releases", "AI model updates"]
+      regulation: ["Data privacy laws", "Industry regulations"]
+
+  human_in_the_loop:
+    notification_channel: "whatsapp"
+    approval_required:
+      - "deployments"
+      - "publishing"
+      - "customer_data_access"
+    review_required:
+      - "feature_implementations"
+      - "content_drafts"
+    emergency_alerts:
+      - "data_leak"
+      - "security_vulnerability"
+      - "budget_exceeded_95"

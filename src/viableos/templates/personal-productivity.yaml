@@ -1,0 +1,76 @@
+viable_system:
+  name: "My Productivity System"
+  runtime: "openclaw"
+
+  budget:
+    monthly_usd: 50
+    strategy: "frugal"
+
+  identity:
+    purpose: ""
+    values:
+      - "Deep focus over busy work"
+      - "Learning compounds over time"
+    decisions_requiring_human:
+      - "Calendar commitments"
+      - "Spending decisions"
+      - "Communications sent on my behalf"
+
+  system_1:
+    - name: "Deep Work"
+      purpose: "Focus on core expertise and high-value tasks"
+      autonomy: "Can research and prepare independently. External commitments need approval."
+      tools: [research, writing, calendar-blocking]
+
+    - name: "Admin"
+      purpose: "Handle email, scheduling, and paperwork"
+      autonomy: "Can sort and draft independently. Sending needs approval."
+      tools: [email, calendar, documents, filing]
+
+    - name: "Learning"
+      purpose: "Stay current in your field and develop new skills"
+      autonomy: "Can find and summarize resources independently."
+      tools: [rss-reader, paper-search, course-tracking, summarization]
+
+  system_2:
+    coordination_rules:
+      - trigger: "Admin receives a meeting request"
+        action: "Check with Deep Work for calendar conflicts before responding"
+      - trigger: "Learning finds relevant new research"
+        action: "Notify Deep Work if immediately applicable to current project"
+      - trigger: "Deep Work needs a specific resource"
+        action: "Notify Admin to schedule/acquire it"
+
+  system_3:
+    reporting_rhythm: "weekly"
+    resource_allocation: "Deep Work: 60%, Admin: 25%, Learning: 15%"
+
+  system_3_star:
+    schedule: "weekly"
+    checks:
+      - name: "Focus Time"
+        target: "Deep Work"
+        method: "Check actual deep work hours vs. planned. Were there too many interruptions?"
+      - name: "Admin Efficiency"
+        target: "Admin"
+        method: "Check inbox zero status and response time to important emails."
+    on_failure: "Include in weekly review"
+
+  system_4:
+    monitoring:
+      competitors: []
+      technology: ["New tools for your field", "AI productivity tools"]
+      regulation: []
+
+  human_in_the_loop:
+    notification_channel: "telegram"
+    approval_required:
+      - "calendar_commitments"
+      - "sending_communications"
+      - "spending"
+    review_required:
+      - "weekly_summary"
+      - "learning_recommendations"
+    emergency_alerts:
+      - "missed_deadline"
+      - "urgent_email_flagged"

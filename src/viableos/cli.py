@@ -1,14 +1,19 @@
-"""CLI for ViableOS — init and check commands."""
+"""CLI for ViableOS — init, check, generate, and app commands."""
 
 from __future__ import annotations
 
+import subprocess
+import sys
 from pathlib import Path
 
 import click
 from rich.console import Console
 from rich.panel import Panel
+from rich.table import Table
 
+from viableos.budget import calculate_budget
 from viableos.checker import ViabilityReport, check_viability
+from viableos.generator import generate_openclaw_package
 from viableos.schema import load_yaml, validate
 
 console = Console()
@@ -65,6 +70,89 @@ def init(output: str, name: str, purpose: str) -> None:
         f"\n[bold green]✓[/bold green] Created [cyan]{out_path}[/cyan]"
     )
     console.print(f"  Edit the file, then run: [bold]viableos check {out_path}[/bold]")
+
+
+@main.command()
+@click.argument("config_path", type=click.Path(exists=True))
+@click.option(
+    "--output",
+    "-o",
+    default="./viableos-openclaw",
+    help="Output directory for the OpenClaw package",
+    type=click.Path(),
+)
+def generate(config_path: str, output: str) -> None:
+    """Generate an OpenClaw deployment package from a ViableOS config."""
+    config = load_yaml(config_path)
+
+    errors = validate(config)
+    if errors:
+        console.print(f"\n[bold red]Schema errors in {config_path}:[/bold red]")
+        for err in errors:
+            console.print(f"  • {err}")
+        raise SystemExit(1)
+
+    plan = calculate_budget(config)
+    out_path = generate_openclaw_package(config, output)
+
+    vs = config.get("viable_system", {})
+    system_name = vs.get("name", "Unknown")
+
+    console.print(
+        Panel(
+            f'System: [bold]"{system_name}"[/bold]\n'
+            f"Output: [cyan]{out_path}[/cyan]\n"
+            f"Budget: [green]${plan.total_monthly_usd:.0f}/mo[/green] ({plan.strategy})",
+            title="[bold]ViableOS Package Generated[/bold]",
+        )
+    )
+
+    table = Table(title="Agent Allocation")
+    table.add_column("Agent", style="bold")
+    table.add_column("Model")
+    table.add_column("Budget", justify="right")
+    table.add_column("Share", justify="right")
+
+    for alloc in plan.allocations:
+        table.add_row(
+            alloc.friendly_name,
+            alloc.model,
+            f"${alloc.monthly_usd:.0f}",
+            f"{alloc.percentage:.0f}%",
+        )
+    console.print(table)
+
+    console.print(
+        f"\n  [bold green]✓[/bold green] {len(list(out_path.glob('workspaces/*/SOUL.md')))} agents generated"
+    )
+    console.print(f"  Copy [cyan]{out_path}[/cyan] to your OpenClaw server and run [bold]bash install.sh[/bold]")
+
+
+@main.command()
+@click.option("--port", default=8501, help="Port for the web app")
+def app(port: int) -> None:
+    """Launch the ViableOS web wizard and dashboard."""
+    app_path = Path(__file__).parent / "app" / "main.py"
+    if not app_path.exists():
+        console.print("[bold red]App files not found.[/bold red]")
+        raise SystemExit(1)
+    console.print(f"\n[bold]Starting ViableOS...[/bold] → http://localhost:{port}")
+    subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "streamlit",
+            "run",
+            str(app_path),
+            "--server.port",
+            str(port),
+            "--server.headless",
+            "true",
+            "--browser.gatherUsageStats",
+            "false",
+        ],
+        check=False,
+    )
 
 
 def _print_report(path: str, system_name: str, report: ViabilityReport) -> None:

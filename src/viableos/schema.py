@@ -8,6 +8,8 @@ from typing import Any
 import jsonschema
 import yaml
 
+_STRING_ARRAY = {"type": "array", "items": {"type": "string"}}
+
 VIABLEOS_SCHEMA: dict[str, Any] = {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "type": "object",
@@ -30,20 +32,84 @@ VIABLEOS_SCHEMA: dict[str, Any] = {
                         "cursor",
                     ],
                 },
+                "budget": {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "properties": {
+                        "monthly_usd": {"type": "number", "minimum": 0},
+                        "strategy": {
+                            "type": "string",
+                            "enum": ["frugal", "balanced", "performance"],
+                        },
+                        "alerts": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "required": ["at_percent", "action"],
+                                "additionalProperties": False,
+                                "properties": {
+                                    "at_percent": {
+                                        "type": "number",
+                                        "minimum": 0,
+                                        "maximum": 100,
+                                    },
+                                    "action": {"type": "string"},
+                                },
+                            },
+                        },
+                    },
+                },
+                "model_routing": {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "properties": {
+                        "default": {"type": "string"},
+                        "provider_preference": {
+                            "type": "string",
+                            "enum": [
+                                "anthropic",
+                                "openai",
+                                "mixed",
+                                "ollama",
+                            ],
+                        },
+                        "s1_routine": {"type": "string"},
+                        "s1_complex": {"type": "string"},
+                        "s2_coordination": {"type": "string"},
+                        "s3_optimization": {"type": "string"},
+                        "s3_star_audit": {"type": "string"},
+                        "s4_intelligence": {"type": "string"},
+                        "s5_preparation": {"type": "string"},
+                        "fallback": {"type": "string"},
+                    },
+                },
+                "human_in_the_loop": {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "properties": {
+                        "notification_channel": {
+                            "type": "string",
+                            "enum": [
+                                "whatsapp",
+                                "telegram",
+                                "email",
+                                "slack",
+                                "discord",
+                            ],
+                        },
+                        "approval_required": _STRING_ARRAY,
+                        "review_required": _STRING_ARRAY,
+                        "emergency_alerts": _STRING_ARRAY,
+                    },
+                },
                 "identity": {
                     "type": "object",
                     "required": ["purpose"],
                     "additionalProperties": False,
                     "properties": {
                         "purpose": {"type": "string"},
-                        "values": {
-                            "type": "array",
-                            "items": {"type": "string"},
-                        },
-                        "decisions_requiring_human": {
-                            "type": "array",
-                            "items": {"type": "string"},
-                        },
+                        "values": _STRING_ARRAY,
+                        "decisions_requiring_human": _STRING_ARRAY,
                     },
                 },
                 "system_1": {
@@ -57,10 +123,7 @@ VIABLEOS_SCHEMA: dict[str, Any] = {
                             "name": {"type": "string", "minLength": 1},
                             "purpose": {"type": "string", "minLength": 1},
                             "autonomy": {"type": "string"},
-                            "tools": {
-                                "type": "array",
-                                "items": {"type": "string"},
-                            },
+                            "tools": _STRING_ARRAY,
                         },
                     },
                 },
@@ -134,18 +197,9 @@ VIABLEOS_SCHEMA: dict[str, Any] = {
                             "type": "object",
                             "additionalProperties": False,
                             "properties": {
-                                "competitors": {
-                                    "type": "array",
-                                    "items": {"type": "string"},
-                                },
-                                "technology": {
-                                    "type": "array",
-                                    "items": {"type": "string"},
-                                },
-                                "regulation": {
-                                    "type": "array",
-                                    "items": {"type": "string"},
-                                },
+                                "competitors": _STRING_ARRAY,
+                                "technology": _STRING_ARRAY,
+                                "regulation": _STRING_ARRAY,
                             },
                         },
                     },

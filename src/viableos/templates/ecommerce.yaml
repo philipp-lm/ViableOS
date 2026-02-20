@@ -1,0 +1,87 @@
+viable_system:
+  name: "My E-Commerce Business"
+  runtime: "openclaw"
+
+  budget:
+    monthly_usd: 150
+    strategy: "balanced"
+
+  identity:
+    purpose: ""
+    values:
+      - "Customer satisfaction above everything"
+      - "Fast delivery, no excuses"
+    decisions_requiring_human:
+      - "Pricing changes"
+      - "New supplier partnerships"
+      - "Customer refunds over $100"
+
+  system_1:
+    - name: "Product Sourcing"
+      purpose: "Find and evaluate products to sell"
+      autonomy: "Can research independently. New suppliers need approval."
+      tools: [supplier-research, price-comparison, market-analysis]
+
+    - name: "Online Store"
+      purpose: "Manage listings, pricing, and content"
+      autonomy: "Can update listings independently. Pricing changes need approval."
+      tools: [shopify-api, copywriting, seo-analysis]
+
+    - name: "Fulfillment"
+      purpose: "Process and track orders"
+      autonomy: "Can handle standard orders independently. Bulk changes need approval."
+      tools: [shipping-api, inventory-management, order-tracking]
+
+    - name: "Customer Service"
+      purpose: "Handle inquiries and returns"
+      autonomy: "Can respond to standard queries. Refunds over $100 need approval."
+      tools: [email, chat, knowledge-base]
+
+  system_2:
+    coordination_rules:
+      - trigger: "Product Sourcing finds a new product"
+        action: "Notify Online Store to prepare listing and Fulfillment to check logistics"
+      - trigger: "Online Store runs a promotion"
+        action: "Alert Fulfillment about expected volume increase"
+      - trigger: "Fulfillment reports stock below threshold"
+        action: "Notify Product Sourcing to reorder and Online Store to update availability"
+      - trigger: "Customer Service receives repeated complaints about a product"
+        action: "Alert Product Sourcing and Online Store to investigate"
+
+  system_3:
+    reporting_rhythm: "weekly"
+    resource_allocation: "Store: 30%, Sourcing: 25%, Fulfillment: 25%, Service: 20%"
+
+  system_3_star:
+    schedule: "bi-weekly"
+    checks:
+      - name: "Pricing Accuracy"
+        target: "Online Store"
+        method: "Compare listed prices against supplier costs and margin targets."
+      - name: "Fulfillment Speed"
+        target: "Fulfillment"
+        method: "Check last 20 orders against promised delivery times."
+      - name: "Customer Satisfaction"
+        target: "Customer Service"
+        method: "Review last 10 customer interactions for quality and accuracy."
+    on_failure: "Escalate to human immediately"
+
+  system_4:
+    monitoring:
+      competitors: ["Competitor A", "Competitor B", "Amazon (indirect)"]
+      technology: ["E-commerce platform updates", "Payment provider changes"]
+      regulation: ["Consumer protection laws", "Tax regulation changes"]
+
+  human_in_the_loop:
+    notification_channel: "whatsapp"
+    approval_required:
+      - "pricing_changes"
+      - "new_suppliers"
+      - "large_refunds"
+    review_required:
+      - "product_listings"
+      - "marketing_campaigns"
+    emergency_alerts:
+      - "payment_processing_failure"
+      - "major_shipping_delay"
+      - "budget_exceeded_95"
