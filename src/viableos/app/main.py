@@ -106,9 +106,9 @@ def main() -> None:
     if view == "wizard":
         st.markdown("# ViableOS Setup")
         st.markdown(
-            "Build your AI agent organization in 5 steps. "
-            "Based on the Viable System Model — the management framework "
-            "that makes organizations self-governing."
+            "Build your AI agent organization in 6 steps. "
+            "Based on the Viable System Model and real-world community insights "
+            "from hundreds of multi-agent deployments."
         )
         st.divider()
         render_wizard()

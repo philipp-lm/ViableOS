@@ -57,11 +57,16 @@ def vsm_diagram_html(config: dict[str, Any]) -> str:
 
     # S2 rules
     rules_html = ""
-    for r in s2_rules[:3]:
-        rules_html += f"""<div style="font-size:11px;color:{_VSM_COLORS['s2']['text']};padding:2px 0 2px 12px;position:relative;">
+    for r in s2_rules[:4]:
+        trigger = r.get('trigger', '')
+        action = r.get('action', '')
+        rules_html += f"""<div style="font-size:11px;color:{_VSM_COLORS['s2']['text']};padding:2px 0 2px 12px;position:relative;
+            line-height:1.35;">
             <span style="position:absolute;left:0;font-weight:700;">›</span>
-            {r.get('trigger','')[:40]} → {r.get('action','')[:40]}
+            {trigger} &rarr; {action}
         </div>"""
+    if len(s2_rules) > 4:
+        rules_html += f'<div style="font-size:10px;color:#64748b;margin-top:2px;">+ {len(s2_rules) - 4} more rules</div>'
     if not rules_html:
         rules_html = '<div style="font-size:11px;color:#64748b;font-style:italic;">Not configured yet</div>'
 
@@ -93,7 +98,9 @@ def vsm_diagram_html(config: dict[str, Any]) -> str:
     # S5 info
     purpose = identity.get("purpose", "—")
     values = identity.get("values", [])
+    never_do = identity.get("never_do", [])
     values_html = ", ".join(values[:3]) if values else "—"
+    never_do_html = f"<div style='font-size:10px;color:#fca5a5;margin-top:4px;'>{len(never_do)} hard boundaries</div>" if never_do else ""
 
     # HiTL summary for S5 box
     approval_count = len(hitl.get("approval_required", []))
@@ -129,6 +136,7 @@ def vsm_diagram_html(config: dict[str, Any]) -> str:
             <div style="font-size:10px;color:#a5b4fc;">
                 {approval_count} approval gates | {emergency_count} emergency alerts
             </div>
+            {never_do_html}
         </div>
 
         <!-- S4: Intelligence — top right -->

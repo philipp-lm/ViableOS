@@ -30,36 +30,53 @@ FRIENDLY_NAMES = {
 
 MODEL_CATALOG: dict[str, dict[str, str]] = {
     # Anthropic
-    "anthropic/claude-opus-4-6": {"provider": "anthropic", "tier": "premium", "note": "Best reasoning + agents"},
-    "anthropic/claude-sonnet-4-6": {"provider": "anthropic", "tier": "high", "note": "Best speed/quality balance"},
-    "anthropic/claude-haiku-4-5": {"provider": "anthropic", "tier": "fast", "note": "Fast, cheap, near-frontier"},
-    "anthropic/claude-opus-4-5": {"provider": "anthropic", "tier": "premium", "note": "Previous gen top"},
-    "anthropic/claude-sonnet-4-5": {"provider": "anthropic", "tier": "high", "note": "Previous gen high"},
+    "anthropic/claude-opus-4-6": {"provider": "anthropic", "tier": "premium", "note": "Best reasoning + agents", "agent_reliability": "excellent"},
+    "anthropic/claude-sonnet-4-6": {"provider": "anthropic", "tier": "high", "note": "Best speed/quality balance", "agent_reliability": "excellent"},
+    "anthropic/claude-haiku-4-5": {"provider": "anthropic", "tier": "fast", "note": "Fast, cheap, near-frontier", "agent_reliability": "good"},
+    "anthropic/claude-opus-4-5": {"provider": "anthropic", "tier": "premium", "note": "Previous gen top", "agent_reliability": "excellent"},
+    "anthropic/claude-sonnet-4-5": {"provider": "anthropic", "tier": "high", "note": "Previous gen high", "agent_reliability": "good"},
     # OpenAI
-    "openai/gpt-5.3-codex": {"provider": "openai", "tier": "premium", "note": "Best agentic coding model (Feb 2026)"},
-    "openai/gpt-5.3-codex-spark": {"provider": "openai", "tier": "high", "note": "Ultra-fast coding, 1000+ tok/s"},
-    "openai/gpt-5.2": {"provider": "openai", "tier": "premium", "note": "Latest flagship"},
-    "openai/gpt-5.1": {"provider": "openai", "tier": "high", "note": "Strong all-round"},
-    "openai/gpt-5.1-codex": {"provider": "openai", "tier": "premium", "note": "Code-focused"},
-    "openai/gpt-5-mini": {"provider": "openai", "tier": "fast", "note": "Budget flagship"},
-    "openai/gpt-5-codex-mini": {"provider": "openai", "tier": "fast", "note": "Budget code model"},
-    "openai/o3": {"provider": "openai", "tier": "premium", "note": "Specialized reasoning"},
+    "openai/gpt-5.3-codex": {"provider": "openai", "tier": "premium", "note": "Best agentic coding model (Feb 2026)", "agent_reliability": "excellent"},
+    "openai/gpt-5.3-codex-spark": {"provider": "openai", "tier": "high", "note": "Ultra-fast coding, 1000+ tok/s", "agent_reliability": "good"},
+    "openai/gpt-5.2": {"provider": "openai", "tier": "premium", "note": "Latest flagship", "agent_reliability": "excellent"},
+    "openai/gpt-5.1": {"provider": "openai", "tier": "high", "note": "Strong all-round", "agent_reliability": "good"},
+    "openai/gpt-5.1-codex": {"provider": "openai", "tier": "premium", "note": "Code-focused", "agent_reliability": "good"},
+    "openai/gpt-5-mini": {"provider": "openai", "tier": "fast", "note": "Budget flagship", "agent_reliability": "limited"},
+    "openai/gpt-5-codex-mini": {"provider": "openai", "tier": "fast", "note": "Budget code model", "agent_reliability": "limited"},
+    "openai/o3": {"provider": "openai", "tier": "premium", "note": "Specialized reasoning", "agent_reliability": "good"},
     # Google
-    "google/gemini-3-pro": {"provider": "google", "tier": "premium", "note": "Top-ranked overall"},
-    "google/gemini-3-flash": {"provider": "google", "tier": "high", "note": "Fast + capable"},
-    "google/gemini-2.5-pro": {"provider": "google", "tier": "high", "note": "Strong reasoning"},
-    "google/gemini-2.5-flash": {"provider": "google", "tier": "fast", "note": "Budget, 1M context"},
-    "google/gemini-2.5-flash-lite": {"provider": "google", "tier": "budget", "note": "Cheapest Gemini"},
+    "google/gemini-3-pro": {"provider": "google", "tier": "premium", "note": "Top-ranked overall", "agent_reliability": "excellent"},
+    "google/gemini-3-flash": {"provider": "google", "tier": "high", "note": "Fast + capable", "agent_reliability": "good"},
+    "google/gemini-2.5-pro": {"provider": "google", "tier": "high", "note": "Strong reasoning", "agent_reliability": "good"},
+    "google/gemini-2.5-flash": {"provider": "google", "tier": "fast", "note": "Budget, 1M context", "agent_reliability": "limited"},
+    "google/gemini-2.5-flash-lite": {"provider": "google", "tier": "budget", "note": "Cheapest Gemini", "agent_reliability": "limited"},
     # DeepSeek
-    "deepseek/deepseek-v3.2": {"provider": "deepseek", "tier": "high", "note": "Open source, competitive"},
+    "deepseek/deepseek-v3.2": {"provider": "deepseek", "tier": "high", "note": "Open source, competitive", "agent_reliability": "limited"},
     # xAI
-    "xai/grok-4": {"provider": "xai", "tier": "premium", "note": "256K context, fast"},
+    "xai/grok-4": {"provider": "xai", "tier": "premium", "note": "256K context, fast", "agent_reliability": "good"},
     # Meta
-    "meta/llama-4": {"provider": "meta", "tier": "high", "note": "Open source, self-hostable"},
+    "meta/llama-4": {"provider": "meta", "tier": "high", "note": "Open source, self-hostable", "agent_reliability": "good"},
     # Ollama (local)
-    "ollama/llama-4": {"provider": "ollama", "tier": "high", "note": "Local Llama 4"},
-    "ollama/mistral-large": {"provider": "ollama", "tier": "high", "note": "Local Mistral"},
-    "ollama/deepseek-v3": {"provider": "ollama", "tier": "high", "note": "Local DeepSeek"},
+    "ollama/llama-4": {"provider": "ollama", "tier": "high", "note": "Local Llama 4", "agent_reliability": "limited"},
+    "ollama/mistral-large": {"provider": "ollama", "tier": "high", "note": "Local Mistral", "agent_reliability": "limited"},
+    "ollama/deepseek-v3": {"provider": "ollama", "tier": "high", "note": "Local DeepSeek", "agent_reliability": "limited"},
+}
+
+MODEL_WARNINGS: dict[str, str] = {
+    "deepseek/deepseek-v3.2": "Known issue: malformed tool calls in complex agent workflows. Great for reasoning, risky for tool-heavy tasks.",
+    "openai/gpt-5-mini": "Community reports poor agent reliability. Consider gpt-5.1 or higher for production agents.",
+    "openai/gpt-5-codex-mini": "Budget model — may struggle with complex multi-step agent tasks.",
+    "google/gemini-2.5-flash": "Good for routine tasks but context handling degrades in long agent sessions.",
+    "google/gemini-2.5-flash-lite": "Minimal model — only suitable for very simple, single-step tasks.",
+    "ollama/llama-4": "Local models have context limitations in longer agent sessions. Test thoroughly.",
+    "ollama/mistral-large": "Local models have context limitations in longer agent sessions. Test thoroughly.",
+    "ollama/deepseek-v3": "Local model with known tool-call issues inherited from DeepSeek. Test thoroughly.",
+}
+
+AGENT_RELIABILITY_LABELS = {
+    "excellent": "Excellent — reliable tool calls, strong agentic behavior",
+    "good": "Good — generally reliable, occasional edge cases",
+    "limited": "Limited — known issues with tool calls or long sessions",
 }
 
 MODEL_TIERS = {
@@ -178,6 +195,65 @@ def get_models_for_provider(provider: str) -> list[str]:
 def get_all_models() -> list[str]:
     """Return all model IDs sorted by provider."""
     return sorted(MODEL_CATALOG.keys())
+
+
+# ── Fallback chains ─────────────────────────────────────────────────────────
+
+def _cheapest_model_for_provider(provider: str) -> str:
+    """Return the cheapest (fast/budget tier) model for a provider."""
+    tier_priority = ["budget", "fast", "high", "premium"]
+    for tier in tier_priority:
+        for model_id, info in MODEL_CATALOG.items():
+            if info["provider"] == provider and info["tier"] == tier:
+                return model_id
+    return next(
+        (m for m, i in MODEL_CATALOG.items() if i["provider"] == provider),
+        "anthropic/claude-haiku-4-5",
+    )
+
+
+def get_heartbeat_model(primary_model: str) -> str:
+    """Return the cheapest model from the same provider for heartbeats (saves 60-80%)."""
+    info = MODEL_CATALOG.get(primary_model, {})
+    provider = info.get("provider", "anthropic")
+    cheap = _cheapest_model_for_provider(provider)
+    if cheap != primary_model:
+        return cheap
+    return primary_model
+
+
+def get_fallback_chain(primary_model: str, max_fallbacks: int = 2) -> list[str]:
+    """Return a fallback chain: same-provider cheaper model, then cross-provider.
+
+    Community best practice: max 3 models in chain, exponential backoff.
+    """
+    info = MODEL_CATALOG.get(primary_model, {})
+    provider = info.get("provider", "anthropic")
+    tier = info.get("tier", "high")
+
+    fallbacks: list[str] = []
+
+    tier_order = ["premium", "high", "fast", "budget"]
+    primary_tier_idx = tier_order.index(tier) if tier in tier_order else 1
+
+    for lower_tier in tier_order[primary_tier_idx + 1:]:
+        for m, mi in MODEL_CATALOG.items():
+            if mi["provider"] == provider and mi["tier"] == lower_tier and m != primary_model:
+                fallbacks.append(m)
+                break
+        if len(fallbacks) >= 1:
+            break
+
+    cross_providers = ["anthropic", "openai", "google"]
+    for cp in cross_providers:
+        if cp != provider and len(fallbacks) < max_fallbacks:
+            for m, mi in MODEL_CATALOG.items():
+                if mi["provider"] == cp and mi["tier"] in ("fast", "high"):
+                    fallbacks.append(m)
+                    break
+            break
+
+    return fallbacks[:max_fallbacks]
 
 
 def calculate_budget(config: dict[str, Any]) -> BudgetPlan:

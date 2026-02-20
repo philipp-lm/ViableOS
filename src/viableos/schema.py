@@ -106,6 +106,17 @@ VIABLEOS_SCHEMA: dict[str, Any] = {
                         "emergency_alerts": _STRING_ARRAY,
                     },
                 },
+                "persistence": {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "properties": {
+                        "strategy": {
+                            "type": "string",
+                            "enum": ["sqlite", "file", "notion", "custom", "none"],
+                        },
+                        "path": {"type": "string"},
+                    },
+                },
                 "identity": {
                     "type": "object",
                     "required": ["purpose"],
@@ -113,6 +124,7 @@ VIABLEOS_SCHEMA: dict[str, Any] = {
                     "properties": {
                         "purpose": {"type": "string"},
                         "values": _STRING_ARRAY,
+                        "never_do": _STRING_ARRAY,
                         "decisions_requiring_human": _STRING_ARRAY,
                     },
                 },

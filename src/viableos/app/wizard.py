@@ -1,6 +1,10 @@
-"""5-step setup wizard for ViableOS.
+"""6-step setup wizard for ViableOS.
 
-Step order: Template -> Identity -> Customize Units -> Budget & Models -> Human-in-the-Loop
+Step order: Template -> Identity -> Customize Units -> Budget & Models ->
+            Human-in-the-Loop -> Review & Warnings
+
+Incorporates community insights: never_do, model warnings, persistence,
+auto-generated S2 rules, start-with-1-2 guidance, rollout recommendations.
 """
 
 from __future__ import annotations
@@ -12,7 +16,9 @@ from viableos.app.state import (
     APPROVAL_PRESETS,
     AUTONOMY_LEVELS,
     EMERGENCY_PRESETS,
+    NEVER_DO_PRESETS,
     NOTIFICATION_CHANNELS,
+    PERSISTENCE_STRATEGIES,
     REVIEW_PRESETS,
     TEMPLATE_INFO,
     TOOL_CATEGORIES,
@@ -22,9 +28,10 @@ from viableos.app.state import (
     load_template,
     set_config,
 )
-from viableos.budget import MODEL_CATALOG, calculate_budget, get_all_models
+from viableos.budget import AGENT_RELIABILITY_LABELS, MODEL_CATALOG, MODEL_WARNINGS, calculate_budget, get_all_models
+from viableos.coordination import generate_base_rules
 
-TOTAL_STEPS = 5
+TOTAL_STEPS = 6
 
 
 def _go(step: int) -> None:
@@ -34,7 +41,7 @@ def _go(step: int) -> None:
 def render_wizard() -> None:
     """Main wizard renderer — dispatches to the current step."""
     step = st.session_state.get("wizard_step", 0)
-    steps = [_step_template, _step_identity, _step_customize, _step_budget, _step_hitl]
+    steps = [_step_template, _step_identity, _step_customize, _step_budget, _step_hitl, _step_review]
 
     if 0 <= step < len(steps):
         steps[step]()
@@ -116,7 +123,7 @@ def _step_template() -> None:
 
 def _step_identity() -> None:
     step_header(1, TOTAL_STEPS, "Your Organization",
-                "Name your system, describe its purpose, and pick the values that guide your agents.")
+                "Name your system, describe its purpose, pick values, and set hard boundaries.")
 
     vs = get_vs()
 
@@ -152,8 +159,35 @@ def _step_identity() -> None:
         placeholder="e.g. Move fast and learn, Respect everyone's time",
     )
     custom_values = [v.strip() for v in custom_values_str.split(",") if v.strip()] if custom_values_str else []
-
     all_values = selected_values + [v for v in custom_values if v not in selected_values]
+
+    # ── "What should agents NEVER do?" — Painpoint #2 & #7 ──────────────
+    st.divider()
+    st.markdown("**What should your agents NEVER do?**")
+    st.caption(
+        "These are hard boundaries. Agents are explicitly forbidden from these actions. "
+        "The community's #1 lesson: agents without explicit boundaries cause chaos."
+    )
+
+    existing_never = vs.get("identity", {}).get("never_do", [])
+    known_never = [n for n in existing_never if n in NEVER_DO_PRESETS]
+    custom_never_existing = [n for n in existing_never if n not in NEVER_DO_PRESETS]
+
+    selected_never = st.multiselect(
+        "Select boundaries",
+        options=NEVER_DO_PRESETS,
+        default=known_never or NEVER_DO_PRESETS[:4],
+        key="identity_never_do",
+        label_visibility="collapsed",
+    )
+
+    custom_never_str = st.text_input(
+        "Additional boundaries (comma-separated)",
+        value=", ".join(custom_never_existing),
+        placeholder="e.g. Never contact customers directly, Never modify billing system",
+    )
+    custom_never = [n.strip() for n in custom_never_str.split(",") if n.strip()] if custom_never_str else []
+    all_never = selected_never + [n for n in custom_never if n not in selected_never]
 
     can_proceed = bool(name and purpose)
 
@@ -170,6 +204,7 @@ def _step_identity() -> None:
         config["viable_system"]["identity"]["purpose"] = purpose
         if all_values:
             config["viable_system"]["identity"]["values"] = all_values
+        config["viable_system"]["identity"]["never_do"] = all_never
         set_config(config)
         _go(2)
         st.rerun()
@@ -179,12 +214,25 @@ def _step_identity() -> None:
 
 def _step_customize() -> None:
     step_header(2, TOTAL_STEPS, "Customize Your Teams",
-                "These are your operational units — the agents that do the actual work. "
-                "Adjust names, purposes, autonomy levels, and tools.")
+                "These are your operational units — the agents that do the actual work.")
 
     config = get_config()
     vs = config.get("viable_system", {})
     units = vs.get("system_1", [])
+
+    # Rollout guidance — Painpoint #6
+    st.markdown(
+        """<div style="padding:12px 16px;border-radius:8px;background:#1a1a3e;
+        border:1px solid #4f46e5;margin-bottom:16px;">
+        <div style="font-weight:700;color:#a5b4fc;font-size:13px;">Community insight: Start small</div>
+        <div style="font-size:12px;color:#c7d2fe;margin-top:4px;">
+        "The people posting 'my agent built an app overnight' have spent weeks tuning."
+        Start with 1-2 units, get them working end-to-end, then add more.
+        You can always add units later.
+        </div>
+        </div>""",
+        unsafe_allow_html=True,
+    )
 
     if not units:
         units = [{"name": "", "purpose": "", "autonomy": "", "tools": []}]
@@ -211,6 +259,25 @@ def _step_customize() -> None:
             set_config(config)
             st.rerun()
 
+    # Auto-generated S2 rules preview — Painpoint #2
+    if len(edited_units) >= 1 and any(u.get("name") for u in edited_units):
+        st.divider()
+        st.markdown("**Auto-generated coordination rules** (preview)")
+        st.caption(
+            "ViableOS auto-generates anti-looping, workspace isolation, and communication rules. "
+            "These are added to your final config alongside any manual rules."
+        )
+        auto_rules = generate_base_rules(edited_units)
+        for rule in auto_rules[:5]:
+            st.markdown(
+                f"<div style='font-size:11px;color:#94a3b8;padding:2px 0;'>"
+                f"<span style='color:#6366f1;'>When:</span> {rule['trigger']} "
+                f"<span style='color:#6366f1;'>Then:</span> {rule['action']}</div>",
+                unsafe_allow_html=True,
+            )
+        if len(auto_rules) > 5:
+            st.caption(f"...and {len(auto_rules) - 5} more rules")
+
     has_valid_units = all(u.get("name") and u.get("purpose") for u in edited_units)
 
     back, nxt = nav_buttons(2, TOTAL_STEPS, can_proceed=has_valid_units)
@@ -226,7 +293,7 @@ def _step_customize() -> None:
 
 # ── Step 3: Budget & Models ────────────────────────────────────────────────
 
-_AUTO = "(auto — use strategy default)"
+_AUTO = "(auto \u2014 use strategy default)"
 
 SYSTEM_MODEL_KEYS = {
     "S2 Coordinator": "s2_coordination",
@@ -237,16 +304,16 @@ SYSTEM_MODEL_KEYS = {
 }
 
 SYSTEM_DESCRIPTIONS = {
-    "S2 Coordinator": "Prevents conflicts between operational units — lightweight, needs speed",
-    "S3 Optimizer": "Manages resources, creates weekly digest — needs analytical power",
-    "S3* Auditor": "Independent quality checks — should use different provider than S1",
-    "S4 Scout": "Monitors environment, strategic briefs — needs strong reasoning",
-    "S5 Policy Guardian": "Enforces values, prepares human decisions — needs precision",
+    "S2 Coordinator": "Prevents conflicts between operational units \u2014 lightweight, needs speed",
+    "S3 Optimizer": "Manages resources, creates weekly digest \u2014 needs analytical power",
+    "S3* Auditor": "Independent quality checks \u2014 should use different provider than S1",
+    "S4 Scout": "Monitors environment, strategic briefs \u2014 needs strong reasoning",
+    "S5 Policy Guardian": "Enforces values, prepares human decisions \u2014 needs precision",
 }
 
 
 def _model_selector(label: str, current: str, all_models: list[str], key: str) -> str:
-    """Reusable model selectbox with auto option. Returns model ID or empty string."""
+    """Reusable model selectbox with auto option and warnings. Returns model ID or empty string."""
     options = [_AUTO] + all_models
     idx = 0
     if current and current in all_models:
@@ -254,15 +321,34 @@ def _model_selector(label: str, current: str, all_models: list[str], key: str) -
     selected = st.selectbox(label, options=options, index=idx, key=key, label_visibility="collapsed")
     if selected != _AUTO:
         info = MODEL_CATALOG.get(selected, {})
-        st.caption(f"{info.get('tier', '').title()} — {info.get('note', '')}")
+        reliability = info.get("agent_reliability", "unknown")
+        reliability_label = AGENT_RELIABILITY_LABELS.get(reliability, reliability)
+        st.caption(f"{info.get('tier', '').title()} \u2014 {info.get('note', '')} | Agent reliability: {reliability_label}")
+
+        if selected in MODEL_WARNINGS:
+            st.warning(MODEL_WARNINGS[selected], icon="\u26a0\ufe0f")
         return selected
     return ""
 
 
 def _step_budget() -> None:
     step_header(3, TOTAL_STEPS, "Budget & AI Models",
-                "Set your budget and choose models for every system. "
-                "Expand each section to override the strategy default.")
+                "Token costs are the #1 pain point in multi-agent systems. "
+                "Set your budget and choose models carefully.")
+
+    # Community insight callout
+    st.markdown(
+        """<div style="padding:12px 16px;border-radius:8px;background:#78350f;
+        border:1px solid #f59e0b;margin-bottom:16px;">
+        <div style="font-weight:700;color:#fde68a;font-size:13px;">Community insight: Token costs</div>
+        <div style="font-size:12px;color:#fef3c7;margin-top:4px;">
+        Users report 20-40k tokens per request without optimization (down to 1.5k with it).
+        The model router and budget alerts are your best defense against runaway costs.
+        Chat quality != agent quality — some cheap models work great for routine tasks.
+        </div>
+        </div>""",
+        unsafe_allow_html=True,
+    )
 
     config = get_config()
     vs = config.get("viable_system", {})
@@ -286,9 +372,9 @@ def _step_budget() -> None:
         )
     with col_strategy:
         strategy_labels = {
-            "frugal": "Frugal — cheapest models, good for testing",
-            "balanced": "Balanced — smart routing, recommended",
-            "performance": "Performance — best models everywhere",
+            "frugal": "Frugal \u2014 cheapest models, good for testing",
+            "balanced": "Balanced \u2014 smart routing, recommended",
+            "performance": "Performance \u2014 best models everywhere",
         }
         strategy = st.radio(
             "Strategy",
@@ -321,8 +407,8 @@ def _step_budget() -> None:
 
     # ── S1: Per-unit model & weight ──────────────────────────────────────
     st.divider()
-    st.markdown("#### S1 — Operational Units (65% of budget)")
-    st.caption("Pick a model and budget weight for each unit.")
+    st.markdown("#### S1 \u2014 Operational Units (65% of budget)")
+    st.caption("Pick a model and budget weight for each unit. Models with known agent issues show warnings.")
 
     updated_units = []
     for i, unit in enumerate(units):
@@ -330,7 +416,7 @@ def _step_budget() -> None:
         current_model = unit.get("model", "")
         current_weight = unit.get("weight", 5)
 
-        with st.expander(f"**{uname}** — {unit.get('purpose', '')[:50]}", expanded=False):
+        with st.expander(f"**{uname}** \u2014 {unit.get('purpose', '')[:50]}", expanded=False):
             c1, c2 = st.columns([3, 1])
             with c1:
                 sel = _model_selector(f"Model for {uname}", current_model, all_models, f"unit_model_{i}")
@@ -362,7 +448,7 @@ def _step_budget() -> None:
 
     for sys_label, routing_key in SYSTEM_MODEL_KEYS.items():
         current = routing.get(routing_key, "")
-        with st.expander(f"**{sys_label}** — {SYSTEM_DESCRIPTIONS[sys_label]}", expanded=False):
+        with st.expander(f"**{sys_label}** \u2014 {SYSTEM_DESCRIPTIONS[sys_label]}", expanded=False):
             sel = _model_selector(
                 f"Model for {sys_label}",
                 current,
@@ -375,6 +461,7 @@ def _step_budget() -> None:
     # ── Budget alerts ────────────────────────────────────────────────────
     st.divider()
     st.markdown("#### Budget alerts")
+    st.caption("Get notified before costs spiral. The community's #1 pain point is unexpected token bills.")
     col_warn, col_limit = st.columns(2)
     with col_warn:
         warn_pct = st.number_input("Warn at %", value=80, min_value=10, max_value=100, step=5)
@@ -398,7 +485,7 @@ def _step_budget() -> None:
 
     for alloc in plan.allocations:
         pct_bar = int(alloc.percentage / 2)
-        bar = "█" * pct_bar + "░" * (50 - pct_bar)
+        bar = "\u2588" * pct_bar + "\u2591" * (50 - pct_bar)
         model_short = alloc.model.split("/")[-1] if "/" in alloc.model else alloc.model
         st.text(f"  {alloc.system:<20} {bar} ${alloc.monthly_usd:>5.0f}/mo  {model_short}")
 
@@ -428,8 +515,8 @@ def _step_budget() -> None:
 # ── Step 4: Human-in-the-Loop ──────────────────────────────────────────────
 
 def _step_hitl() -> None:
-    step_header(4, TOTAL_STEPS, "Human-in-the-Loop",
-                "The most important safety config: decide when agents must ask YOU before acting.")
+    step_header(4, TOTAL_STEPS, "Human-in-the-Loop & Persistence",
+                "Safety config: when agents ask you, and how they remember across sessions.")
 
     config = get_config()
     vs = config.get("viable_system", {})
@@ -524,6 +611,34 @@ def _step_hitl() -> None:
     extra_emergency = [e.strip() for e in emergency_custom.split(",") if e.strip()] if emergency_custom else []
     all_emergency = emergency_selected + extra_emergency
 
+    # ── Persistence — Painpoint #3 ────────────────────────────────────────
+    st.divider()
+    st.markdown("#### State persistence")
+    st.caption(
+        "Without persistence, agents forget everything when sessions end. "
+        "Community insight: 'Sessions are stateful only while open.'"
+    )
+
+    persistence = vs.get("persistence", {})
+    current_strategy = persistence.get("strategy", "sqlite")
+
+    persistence_keys = list(PERSISTENCE_STRATEGIES.keys())
+    persistence_choice = st.radio(
+        "Persistence strategy",
+        options=persistence_keys,
+        format_func=lambda x: PERSISTENCE_STRATEGIES[x],
+        index=persistence_keys.index(current_strategy) if current_strategy in persistence_keys else 0,
+        label_visibility="collapsed",
+    )
+
+    persistence_path = ""
+    if persistence_choice in ("sqlite", "file"):
+        persistence_path = st.text_input(
+            "Storage path",
+            value=persistence.get("path", "./viableos-state"),
+            placeholder="e.g. ./viableos-state",
+        )
+
     back, nxt = nav_buttons(4, TOTAL_STEPS)
     if back:
         _go(3)
@@ -535,6 +650,117 @@ def _step_hitl() -> None:
             "review_required": all_review,
             "emergency_alerts": all_emergency,
         }
+        config["viable_system"]["persistence"] = {
+            "strategy": persistence_choice,
+        }
+        if persistence_path:
+            config["viable_system"]["persistence"]["path"] = persistence_path
         set_config(config)
+        _go(5)
+        st.rerun()
+
+
+# ── Step 5: Review & Warnings ────────────────────────────────────────────
+
+def _step_review() -> None:
+    step_header(5, TOTAL_STEPS, "Review & Warnings",
+                "Check your configuration against community best practices before generating.")
+
+    config = get_config()
+    vs = config.get("viable_system", {})
+
+    from viableos.checker import check_viability
+    report = check_viability(config)
+
+    # Viability score
+    st.markdown(f"#### Viability Score: {report.score}/{report.total}")
+    for check in report.checks:
+        status = "PASS" if check.present else "MISSING"
+        color = "#10b981" if check.present else "#ef4444"
+        st.markdown(
+            f"""<div style="padding:6px 10px;border-radius:6px;border:1px solid #334155;
+            background:#1e293b;margin-bottom:4px;display:flex;align-items:center;gap:8px;">
+            <span style="color:{color};font-weight:700;font-size:11px;min-width:60px;">{status}</span>
+            <span style="color:#f8fafc;font-weight:600;">{check.system} {check.name}</span>
+            <span style="color:#94a3b8;font-size:11px;margin-left:auto;">{check.details}</span>
+            </div>""",
+            unsafe_allow_html=True,
+        )
+
+    # Warnings from community-driven checks
+    if report.warnings:
+        st.divider()
+        st.markdown(f"#### Warnings ({len(report.warnings)})")
+        st.caption("Based on real-world community experience with multi-agent systems.")
+
+        severity_colors = {
+            "critical": "#ef4444",
+            "warning": "#f59e0b",
+            "info": "#6366f1",
+        }
+
+        for warning in report.warnings:
+            color = severity_colors.get(warning.severity, "#64748b")
+            st.markdown(
+                f"""<div style="padding:10px 14px;border-radius:8px;border-left:4px solid {color};
+                background:#1e293b;margin-bottom:8px;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                    <span style="color:{color};font-weight:700;font-size:10px;text-transform:uppercase;">
+                        {warning.severity}
+                    </span>
+                    <span style="color:#94a3b8;font-size:10px;">{warning.category}</span>
+                </div>
+                <div style="color:#f8fafc;font-size:13px;">{warning.message}</div>
+                <div style="color:#94a3b8;font-size:11px;margin-top:4px;">{warning.suggestion}</div>
+                </div>""",
+                unsafe_allow_html=True,
+            )
+
+    # Auto-generated S2 rules summary
+    units = vs.get("system_1", [])
+    manual_rules = vs.get("system_2", {}).get("coordination_rules", [])
+    auto_rules = generate_base_rules(units) if units else []
+
+    st.divider()
+    st.markdown(f"#### Coordination Rules: {len(manual_rules)} manual + {len(auto_rules)} auto-generated")
+    st.caption("Auto-generated rules cover anti-looping, workspace isolation, and structured communication.")
+
+    # Rollout recommendation — Painpoint #6
+    st.divider()
+    st.markdown("#### Rollout Recommendation")
+    num_units = len(units)
+    if num_units <= 2:
+        st.markdown(
+            """<div style="padding:12px 16px;border-radius:8px;background:#14532d;
+            border:1px solid #10b981;margin-bottom:12px;">
+            <div style="font-weight:700;color:#a7f3d0;font-size:13px;">Good: Starting with {n} unit{s}</div>
+            <div style="font-size:12px;color:#d1fae5;margin-top:4px;">
+            This is the community-recommended approach. Get {p} working well before adding more.
+            </div>
+            </div>""".format(n=num_units, s="s" if num_units != 1 else "", p="them" if num_units > 1 else "it"),
+            unsafe_allow_html=True,
+        )
+    else:
+        first_unit = units[0].get("name", "your first unit") if units else "your first unit"
+        st.markdown(
+            f"""<div style="padding:12px 16px;border-radius:8px;background:#78350f;
+            border:1px solid #f59e0b;margin-bottom:12px;">
+            <div style="font-weight:700;color:#fde68a;font-size:13px;">Consider: Starting with fewer units</div>
+            <div style="font-size:12px;color:#fef3c7;margin-top:4px;">
+            You have {num_units} units configured. Community experience says: start with 1-2, get them
+            working end-to-end, then add more. Suggested rollout order:<br/>
+            <strong>Phase 1:</strong> {first_unit} + Coordinator + basic S2 rules<br/>
+            <strong>Phase 2:</strong> Add remaining units one at a time<br/>
+            <strong>Phase 3:</strong> Activate S3* Audit and S4 Scout
+            </div>
+            </div>""",
+            unsafe_allow_html=True,
+        )
+
+    back, nxt = nav_buttons(5, TOTAL_STEPS, on_next="Generate")
+    if back:
+        _go(4)
+        st.rerun()
+    if nxt:
         st.session_state["view"] = "dashboard"
         st.rerun()

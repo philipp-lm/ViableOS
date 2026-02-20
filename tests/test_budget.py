@@ -160,3 +160,26 @@ def test_get_models_for_provider():
     anthropic_models = get_models_for_provider("anthropic")
     assert len(anthropic_models) >= 3
     assert all("anthropic" in m for m in anthropic_models)
+
+
+def test_heartbeat_model_is_cheaper():
+    from viableos.budget import get_heartbeat_model, MODEL_CATALOG
+    hb = get_heartbeat_model("anthropic/claude-opus-4-6")
+    hb_tier = MODEL_CATALOG[hb]["tier"]
+    assert hb_tier in ("fast", "budget", "high")
+    assert hb != "anthropic/claude-opus-4-6"
+
+
+def test_fallback_chain_has_entries():
+    from viableos.budget import get_fallback_chain
+    chain = get_fallback_chain("anthropic/claude-opus-4-6")
+    assert len(chain) >= 1
+    assert len(chain) <= 2
+    assert all(fb != "anthropic/claude-opus-4-6" for fb in chain)
+
+
+def test_fallback_chain_includes_cross_provider():
+    from viableos.budget import get_fallback_chain
+    chain = get_fallback_chain("anthropic/claude-opus-4-6")
+    providers = {fb.split("/")[0] for fb in chain}
+    assert len(providers) >= 1

@@ -163,6 +163,31 @@ EMERGENCY_PRESETS = [
 
 NOTIFICATION_CHANNELS = ["whatsapp", "telegram", "email", "slack", "discord"]
 
+# ── "Never do" presets ────────────────────────────────────────────────────────
+
+NEVER_DO_PRESETS = [
+    "Delete production data",
+    "Send emails or messages without human approval",
+    "Access customer personal information directly",
+    "Make financial transactions autonomously",
+    "Modify other agents' configurations or workspaces",
+    "Disable audit or monitoring systems",
+    "Share API keys or credentials in outputs",
+    "Install packages globally on the system",
+    "Bypass human-in-the-loop approval gates",
+    "Access external APIs not in the approved tools list",
+]
+
+# ── Persistence strategies ────────────────────────────────────────────────────
+
+PERSISTENCE_STRATEGIES = {
+    "sqlite": "SQLite — lightweight database, good for single-server setups",
+    "file": "File-based — simple text/JSON files, easy to inspect and debug",
+    "notion": "Notion — cloud-based, good for human-readable state",
+    "custom": "Custom — bring your own persistence layer",
+    "none": "None — state is lost when sessions end (not recommended for production)",
+}
+
 
 # ── Session state management ─────────────────────────────────────────────────
 

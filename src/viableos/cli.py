@@ -129,9 +129,21 @@ def generate(config_path: str, output: str) -> None:
 
 
 @main.command()
+@click.option("--port", default=8000, help="Port for the API server")
+@click.option("--reload", is_flag=True, help="Enable auto-reload for development")
+def api(port: int, reload: bool) -> None:
+    """Start the ViableOS FastAPI backend server."""
+    import uvicorn
+
+    console.print(f"\n[bold]Starting ViableOS API...[/bold] → http://localhost:{port}")
+    console.print("  API docs → http://localhost:{port}/docs")
+    uvicorn.run("viableos.api.main:app", host="0.0.0.0", port=port, reload=reload)
+
+
+@main.command()
 @click.option("--port", default=8501, help="Port for the web app")
 def app(port: int) -> None:
-    """Launch the ViableOS web wizard and dashboard."""
+    """Launch the ViableOS Streamlit wizard (legacy)."""
     app_path = Path(__file__).parent / "app" / "main.py"
     if not app_path.exists():
         console.print("[bold red]App files not found.[/bold red]")

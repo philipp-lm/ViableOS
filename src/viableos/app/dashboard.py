@@ -1,4 +1,4 @@
-"""Dashboard view — VSM overview, budget, agents, HiTL summary."""
+"""Dashboard view — VSM overview, budget, agents, HiTL summary, warnings, rollout."""
 
 from __future__ import annotations
 
@@ -54,7 +54,7 @@ def render_dashboard() -> None:
     report = check_viability(config)
 
     # Top metrics
-    m1, m2, m3, m4 = st.columns(4)
+    m1, m2, m3, m4, m5 = st.columns(5)
     with m1:
         st.metric("Viability Score", f"{report.score}/{report.total}")
     with m2:
@@ -63,8 +63,50 @@ def render_dashboard() -> None:
         st.metric("Strategy", plan.strategy.title())
     with m4:
         st.metric("Agents", str(len(plan.allocations)))
+    with m5:
+        critical_count = sum(1 for w in report.warnings if w.severity == "critical")
+        warning_count = sum(1 for w in report.warnings if w.severity == "warning")
+        st.metric("Warnings", f"{critical_count}C / {warning_count}W")
 
     st.divider()
+
+    # ── Warnings panel ────────────────────────────────────────────────────
+    if report.warnings:
+        critical = [w for w in report.warnings if w.severity == "critical"]
+        other = [w for w in report.warnings if w.severity != "critical"]
+
+        if critical:
+            for w in critical:
+                st.markdown(
+                    f"""<div style="padding:10px 14px;border-radius:8px;border-left:4px solid #ef4444;
+                    background:#1e293b;margin-bottom:6px;">
+                    <span style="color:#ef4444;font-weight:700;font-size:10px;">CRITICAL</span>
+                    <span style="color:#94a3b8;font-size:10px;margin-left:8px;">{w.category}</span>
+                    <div style="color:#f8fafc;font-size:12px;margin-top:2px;">{w.message}</div>
+                    <div style="color:#94a3b8;font-size:11px;">{w.suggestion}</div>
+                    </div>""",
+                    unsafe_allow_html=True,
+                )
+
+        if other:
+            with st.expander(f"Warnings and insights ({len(other)})", expanded=False):
+                severity_colors = {"warning": "#f59e0b", "info": "#6366f1"}
+                for w in other:
+                    color = severity_colors.get(w.severity, "#64748b")
+                    st.markdown(
+                        f"""<div style="padding:8px 12px;border-radius:6px;border-left:3px solid {color};
+                        background:#1e293b;margin-bottom:4px;">
+                        <span style="color:{color};font-weight:700;font-size:10px;text-transform:uppercase;">
+                            {w.severity}
+                        </span>
+                        <span style="color:#94a3b8;font-size:10px;margin-left:6px;">{w.category}</span>
+                        <div style="color:#f8fafc;font-size:12px;margin-top:2px;">{w.message}</div>
+                        <div style="color:#94a3b8;font-size:11px;">{w.suggestion}</div>
+                        </div>""",
+                        unsafe_allow_html=True,
+                    )
+
+        st.divider()
 
     # Two-column layout: VSM diagram | Budget + Models
     left, right = st.columns([1.3, 1])
@@ -72,7 +114,7 @@ def render_dashboard() -> None:
     with left:
         st.markdown("### System Map")
         diagram = vsm_diagram_html(config)
-        components.html(diagram, height=580, scrolling=False)
+        components.html(diagram, height=700, scrolling=True)
 
     with right:
         st.markdown("### Budget Allocation")
@@ -147,31 +189,25 @@ def render_dashboard() -> None:
             "tools": "",
         })
 
-    cols = st.columns(3)
-    for i, agent in enumerate(agent_data):
-        with cols[i % 3]:
-            model_short = agent["model"].split("/")[-1] if "/" in agent["model"] else agent["model"]
-            tools_line = f"<div style='font-size:10px;color:#475569;margin-top:2px;'>Tools: {agent['tools']}</div>" if agent["tools"] else ""
-            st.markdown(
-                f"""<div style="padding: 12px; border-radius: 8px;
-                border: 1px solid #334155; background: #1e293b; margin-bottom: 10px;">
-                <div style="font-weight: 700; color: #f8fafc; font-size: 14px;">
-                    {agent['name']}
-                </div>
-                <div style="font-size: 10px; color: #64748b; margin-bottom: 4px;">
-                    {agent['role']}
-                </div>
-                <div style="font-size: 12px; color: #cbd5e1; margin-bottom: 4px;">
-                    {agent['purpose']}
-                </div>
-                <div style="font-size: 10px; color: #475569; margin-top: 4px;">
-                    Model: <code style="color:#94a3b8;">{model_short}</code>
-                    &nbsp;|&nbsp; {agent['budget']}/mo
-                </div>
-                {tools_line}
-                </div>""",
-                unsafe_allow_html=True,
-            )
+    cards_html = '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',sans-serif;">'
+    for agent in agent_data:
+        model_short = agent["model"].split("/")[-1] if "/" in agent["model"] else agent["model"]
+        tools_line = f'<div style="font-size:10px;color:#475569;margin-top:2px;">Tools: {agent["tools"]}</div>' if agent["tools"] else ""
+        cards_html += f'''<div style="padding:12px;border-radius:8px;border:1px solid #334155;background:#1e293b;">
+            <div style="font-weight:700;color:#f8fafc;font-size:14px;">{agent["name"]}</div>
+            <div style="font-size:10px;color:#64748b;margin-bottom:4px;">{agent["role"]}</div>
+            <div style="font-size:12px;color:#cbd5e1;margin-bottom:4px;">{agent["purpose"]}</div>
+            <div style="font-size:10px;color:#475569;margin-top:4px;">
+                Model: <span style="color:#94a3b8;font-family:monospace;background:#0f172a;padding:1px 5px;border-radius:3px;">{model_short}</span>
+                &nbsp;|&nbsp; {agent["budget"]}/mo
+            </div>
+            {tools_line}
+        </div>'''
+    cards_html += '</div>'
+
+    row_count = (len(agent_data) + 2) // 3
+    cards_height = row_count * 140 + 20
+    components.html(cards_html, height=cards_height, scrolling=False)
 
     st.divider()
 
@@ -194,6 +230,27 @@ def render_dashboard() -> None:
                 st.markdown(f"- {item}")
 
         st.caption(f"Notification channel: **{hitl.get('notification_channel', 'not set')}**")
+
+    # Never-do boundaries
+    never_do = vs.get("identity", {}).get("never_do", [])
+    if never_do:
+        st.divider()
+        st.markdown("### Agent Boundaries (NEVER DO)")
+        for item in never_do:
+            st.markdown(
+                f"<div style='padding:4px 10px;font-size:12px;color:#fca5a5;'>"
+                f"<span style='color:#ef4444;font-weight:700;'>X</span> {item}</div>",
+                unsafe_allow_html=True,
+            )
+
+    # Persistence
+    persistence = vs.get("persistence", {})
+    if persistence.get("strategy") and persistence["strategy"] != "none":
+        st.divider()
+        st.markdown("### State Persistence")
+        st.markdown(f"Strategy: **{persistence['strategy']}**")
+        if persistence.get("path"):
+            st.markdown(f"Path: `{persistence['path']}`")
 
     st.divider()
 
@@ -219,17 +276,32 @@ def render_dashboard() -> None:
                     out_path = generate_openclaw_package(config, Path(tmp) / "viableos-openclaw")
                     agent_count = len(list(out_path.glob("workspaces/*/SOUL.md")))
 
-                    st.success(f"Generated {agent_count} agents")
+                    file_types = ["SOUL.md", "SKILL.md", "HEARTBEAT.md"]
+                    st.success(
+                        f"Generated {agent_count} agents — each with "
+                        f"SOUL.md, SKILL.md, HEARTBEAT.md, USER.md, MEMORY.md, AGENTS.md"
+                    )
 
                     for ws_dir in sorted((out_path / "workspaces").iterdir()):
-                        soul_path = ws_dir / "SOUL.md"
-                        if soul_path.exists():
-                            with st.expander(f"{ws_dir.name}/SOUL.md"):
-                                st.code(soul_path.read_text(), language="markdown")
+                        for ft in file_types:
+                            fpath = ws_dir / ft
+                            if fpath.exists():
+                                with st.expander(f"{ws_dir.name}/{ft}"):
+                                    st.code(fpath.read_text(), language="markdown")
+
+                    for shared_file in ["coordination_rules.md", "org_memory.md"]:
+                        spath = out_path / "shared" / shared_file
+                        if spath.exists():
+                            with st.expander(f"shared/{shared_file}"):
+                                st.code(spath.read_text(), language="markdown")
 
                     openclaw_json = (out_path / "openclaw.json").read_text()
-                    with st.expander("openclaw.json"):
+                    with st.expander("openclaw.json (with fallbacks + agent-to-agent)"):
                         st.code(openclaw_json, language="json")
+
+                    install_sh = (out_path / "install.sh").read_text()
+                    with st.expander("install.sh (phased rollout)"):
+                        st.code(install_sh, language="bash")
 
                     st.download_button(
                         "Download openclaw.json",

@@ -11,10 +11,12 @@ build/
 .venv/
 venv/
 node_modules/
+frontend/dist/
 .DS_Store
 *.log
 .idea/
 .vscode/
+.cursor/
 *.swp
 *.swo
 .worktrees/

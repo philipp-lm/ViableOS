@@ -15,14 +15,15 @@ dependencies = [
     "jsonschema>=4.0",
     "click>=8.0",
     "rich>=13.0",
-    "streamlit>=1.30",
-    "plotly>=5.0",
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.34",
 ]
 
 [project.scripts]
 viableos = "viableos.cli:main"
 
 [project.optional-dependencies]
+streamlit = ["streamlit>=1.30", "plotly>=5.0"]
 dev = [
     "pytest>=7.0",
     "ruff>=0.1",
