@@ -1,0 +1,81 @@
+viable_system:
+  name: "My Accounting Firm"
+  runtime: "openclaw"
+
+  budget:
+    monthly_usd: 150
+    strategy: "balanced"
+
+  identity:
+    purpose: ""
+    values:
+      - "Data-driven decisions"
+      - "Security and privacy first"
+      - "Quality over quantity"
+    decisions_requiring_human:
+      - "Tax filings"
+      - "Client financial advice"
+      - "Audit sign-off"
+      - "New engagement letters"
+
+  system_1:
+    - name: "Bookkeeping"
+      purpose: "Process transactions, reconcile accounts, maintain ledgers"
+      autonomy: "Can categorize and reconcile independently. Month-end close needs review."
+      tools: [accounting-software, bank-feeds, document-processing, spreadsheets]
+
+    - name: "Tax & Compliance"
+      purpose: "Prepare tax returns, ensure regulatory compliance"
+      autonomy: "Can research and prepare independently. Filings need approval."
+      tools: [tax-software, research, document-generation, deadline-tracking]
+
+    - name: "Advisory"
+      purpose: "Provide financial analysis and strategic advice to clients"
+      autonomy: "Can analyze independently. Recommendations need review."
+      tools: [data-analysis, reporting, research, presentation-tools]
+
+  system_2:
+    coordination_rules:
+      - trigger: "Bookkeeping completes month-end close"
+        action: "Notify Tax & Compliance for tax preparation and Advisory for client reporting"
+      - trigger: "Tax & Compliance identifies a deadline"
+        action: "Alert Bookkeeping to prioritize data preparation"
+      - trigger: "Advisory identifies a tax optimization opportunity"
+        action: "Brief Tax & Compliance to verify legality and implementation"
+
+  system_3:
+    reporting_rhythm: "weekly"
+    resource_allocation: "Bookkeeping: 40%, Tax: 35%, Advisory: 25%"
+
+  system_3_star:
+    schedule: "weekly"
+    checks:
+      - name: "Reconciliation Accuracy"
+        target: "Bookkeeping"
+        method: "Spot-check 5 recent reconciliations for errors."
+      - name: "Filing Compliance"
+        target: "Tax & Compliance"
+        method: "Verify all upcoming deadlines are tracked and on schedule."
+    on_failure: "Escalate to partner immediately"
+
+  system_4:
+    monitoring:
+      competitors: ["Other accounting firms", "DIY accounting tools"]
+      technology: ["Accounting software updates", "AI bookkeeping tools"]
+      regulation: ["Tax law changes", "Accounting standards updates", "Audit requirements"]
+
+  human_in_the_loop:
+    notification_channel: "email"
+    approval_required:
+      - "tax_filings"
+      - "client_financial_advice"
+      - "audit_sign_off"
+      - "new_engagement_letters"
+    review_required:
+      - "monthly_reports"
+      - "tax_preparation_drafts"
+      - "advisory_recommendations"
+    emergency_alerts:
+      - "missed_filing_deadline"
+      - "data_discrepancy_detected"
+      - "client_data_breach"

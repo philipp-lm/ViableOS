@@ -13,6 +13,12 @@ TEMPLATES_DIR = Path(__file__).parent.parent / "templates"
 # ── Template metadata ────────────────────────────────────────────────────────
 
 TEMPLATE_INFO = {
+    "custom": {
+        "name": "Start from Scratch",
+        "tagline": "Build your own organization from zero",
+        "description": "Define your own units, values, and structure",
+        "units": 0,
+    },
     "saas-startup": {
         "name": "SaaS Startup",
         "tagline": "Build, ship, and sell software",
@@ -49,16 +55,34 @@ TEMPLATE_INFO = {
         "description": "Strategy, Creative, Performance, Client Relations",
         "units": 4,
     },
-    "restaurant": {
-        "name": "Restaurant / Hospitality",
-        "tagline": "Cook, serve, grow",
-        "description": "Kitchen, Front-of-House, Marketing & Reservations",
-        "units": 3,
-    },
     "consulting": {
         "name": "Consulting Firm",
         "tagline": "Advise, deliver, scale",
         "description": "Business Development, Engagement Delivery, Knowledge & IP",
+        "units": 3,
+    },
+    "law-firm": {
+        "name": "Law Firm",
+        "tagline": "Research, advise, represent",
+        "description": "Case Management, Legal Research, Client Relations",
+        "units": 3,
+    },
+    "accounting": {
+        "name": "Accounting Firm",
+        "tagline": "Count, comply, advise",
+        "description": "Bookkeeping, Tax & Compliance, Advisory",
+        "units": 3,
+    },
+    "education": {
+        "name": "Online Education",
+        "tagline": "Teach, support, grow",
+        "description": "Course Development, Student Success, Growth",
+        "units": 3,
+    },
+    "restaurant": {
+        "name": "Restaurant / Hospitality",
+        "tagline": "Cook, serve, grow",
+        "description": "Kitchen, Front-of-House, Marketing & Reservations",
         "units": 3,
     },
 }

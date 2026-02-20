@@ -1,0 +1,84 @@
+viable_system:
+  name: "My Law Firm"
+  runtime: "openclaw"
+
+  budget:
+    monthly_usd: 200
+    strategy: "balanced"
+
+  identity:
+    purpose: ""
+    values:
+      - "Security and privacy first"
+      - "Quality over quantity"
+      - "Transparency and honesty"
+    decisions_requiring_human:
+      - "Legal advice to clients"
+      - "Court filings"
+      - "Client billing"
+      - "New client engagement"
+
+  system_1:
+    - name: "Case Management"
+      purpose: "Track cases, deadlines, and documents"
+      autonomy: "Can organize and summarize independently. Legal analysis needs review."
+      tools: [document-management, research, calendar, deadline-tracking]
+
+    - name: "Legal Research"
+      purpose: "Research precedents, statutes, and legal opinions"
+      autonomy: "Can research independently. Legal conclusions need review."
+      tools: [legal-databases, research, writing, summarization]
+
+    - name: "Client Relations"
+      purpose: "Manage client communication, billing, and intake"
+      autonomy: "Can prepare documents independently. Client communication needs approval."
+      tools: [email, crm, billing, document-generation]
+
+  system_2:
+    coordination_rules:
+      - trigger: "Client Relations receives a new inquiry"
+        action: "Notify Case Management to check conflicts and Legal Research for preliminary assessment"
+      - trigger: "Legal Research finds relevant precedent"
+        action: "Notify Case Management to update case strategy"
+      - trigger: "Case Management identifies approaching deadline"
+        action: "Alert all relevant units with priority"
+
+  system_3:
+    reporting_rhythm: "weekly"
+    resource_allocation: "Case Management: 40%, Legal Research: 35%, Client Relations: 25%"
+
+  system_3_star:
+    schedule: "weekly"
+    checks:
+      - name: "Deadline Compliance"
+        target: "Case Management"
+        method: "Verify no deadlines were missed or at risk."
+      - name: "Research Accuracy"
+        target: "Legal Research"
+        method: "Spot-check citations and precedent validity."
+      - name: "Billing Accuracy"
+        target: "Client Relations"
+        method: "Cross-check billed hours against case activity logs."
+    on_failure: "Escalate to partner immediately"
+
+  system_4:
+    monitoring:
+      competitors: ["Other law firms in practice area"]
+      technology: ["Legal AI tools", "Court e-filing changes"]
+      regulation: ["Bar association rules", "Privacy regulations", "Court procedure updates"]
+
+  human_in_the_loop:
+    notification_channel: "email"
+    approval_required:
+      - "legal_advice_to_clients"
+      - "court_filings"
+      - "client_billing"
+      - "new_client_engagement"
+    review_required:
+      - "legal_research_summaries"
+      - "document_drafts"
+      - "case_strategy_updates"
+    emergency_alerts:
+      - "missed_deadline"
+      - "client_data_breach"
+      - "conflict_of_interest_detected"

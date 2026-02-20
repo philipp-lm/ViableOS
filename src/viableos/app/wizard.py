@@ -22,7 +22,7 @@ from viableos.app.state import (
     load_template,
     set_config,
 )
-from viableos.budget import MODEL_PRESETS
+from viableos.budget import MODEL_CATALOG, calculate_budget, get_all_models
 
 TOTAL_STEPS = 5
 
@@ -44,7 +44,7 @@ def render_wizard() -> None:
 
 def _step_template() -> None:
     step_header(0, TOTAL_STEPS, "Choose Your Starting Point",
-                "Pick the template closest to your situation. You can customize everything in the next steps.")
+                "Pick a template to pre-fill your setup, or start from scratch.")
 
     selected = st.session_state.get("template_key")
 
@@ -55,11 +55,14 @@ def _step_template() -> None:
             is_selected = selected == key
             border_color = "#6366f1" if is_selected else "#334155"
             check = " [selected]" if is_selected else ""
+            is_custom = key == "custom"
+
+            bg = "#1a1a3e" if is_custom else "#1e293b"
 
             st.markdown(
                 f"""<div style="padding: 14px; border-radius: 10px;
                 border: 2px solid {border_color};
-                margin-bottom: 10px; background: #1e293b; cursor: pointer;">
+                margin-bottom: 10px; background: {bg};">
                 <div style="font-weight: 700; color: #f8fafc; font-size: 14px;">
                     {info['name']}{check}
                 </div>
@@ -67,7 +70,7 @@ def _step_template() -> None:
                     {info['tagline']}
                 </div>
                 <div style="font-size: 11px; color: #64748b;">
-                    {info['description']} | {info['units']} units
+                    {info['description']}{f" | {info['units']} units" if info['units'] else ''}
                 </div>
                 </div>""",
                 unsafe_allow_html=True,
@@ -79,15 +82,28 @@ def _step_template() -> None:
                 type="primary" if is_selected else "secondary",
             ):
                 st.session_state["template_key"] = key
-                template_config = load_template(key)
-                current = get_config()
-                name = current.get("viable_system", {}).get("name", "")
-                purpose = current.get("viable_system", {}).get("identity", {}).get("purpose", "")
-                if name:
-                    template_config["viable_system"]["name"] = name
-                if purpose:
-                    template_config["viable_system"]["identity"]["purpose"] = purpose
-                set_config(template_config)
+                if key == "custom":
+                    config = get_config()
+                    if "viable_system" not in config:
+                        config["viable_system"] = {
+                            "name": "",
+                            "runtime": "openclaw",
+                            "identity": {"purpose": ""},
+                            "system_1": [{"name": "", "purpose": "", "autonomy": "", "tools": []}],
+                            "budget": {"monthly_usd": 150, "strategy": "balanced"},
+                        }
+                    set_config(config)
+                else:
+                    template_config = load_template(key)
+                    current = get_config()
+                    name = current.get("viable_system", {}).get("name", "")
+                    purpose = current.get("viable_system", {}).get("identity", {}).get("purpose", "")
+                    if template_config:
+                        if name:
+                            template_config["viable_system"]["name"] = name
+                        if purpose:
+                            template_config["viable_system"]["identity"]["purpose"] = purpose
+                        set_config(template_config)
                 st.rerun()
 
     back, nxt = nav_buttons(0, TOTAL_STEPS, can_proceed=selected is not None)
@@ -170,6 +186,11 @@ def _step_customize() -> None:
     vs = config.get("viable_system", {})
     units = vs.get("system_1", [])
 
+    if not units:
+        units = [{"name": "", "purpose": "", "autonomy": "", "tools": []}]
+        config["viable_system"]["system_1"] = units
+        set_config(config)
+
     edited_units = []
     for i, unit in enumerate(units):
         edited = unit_editor(unit, i, AUTONOMY_LEVELS, TOOL_CATEGORIES)
@@ -207,14 +228,15 @@ def _step_customize() -> None:
 
 def _step_budget() -> None:
     step_header(3, TOTAL_STEPS, "Budget & AI Models",
-                "Set your monthly token budget and choose how smart (and expensive) your agents should be. "
-                "You can also customize per unit.")
+                "Set your budget, choose models per unit, and see how it all distributes.")
 
     config = get_config()
     vs = config.get("viable_system", {})
     budget = vs.get("budget", {})
     routing = vs.get("model_routing", {})
     units = vs.get("system_1", [])
+
+    all_models = get_all_models()
 
     # Global settings
     st.markdown("#### Global settings")
@@ -241,64 +263,76 @@ def _step_budget() -> None:
             index=["frugal", "balanced", "performance"].index(budget.get("strategy", "balanced")),
         )
 
-    st.markdown("#### Provider preference")
+    st.markdown("#### Default provider")
+    provider_labels = {
+        "anthropic": "Anthropic (Claude)",
+        "openai": "OpenAI (GPT, Codex, o3)",
+        "google": "Google (Gemini)",
+        "deepseek": "DeepSeek",
+        "xai": "xAI (Grok)",
+        "meta": "Meta (Llama)",
+        "mixed": "Mixed (pick per unit)",
+        "ollama": "Ollama (local models)",
+    }
+    provider_keys = list(provider_labels.keys())
+    current_provider = routing.get("provider_preference", "anthropic")
     provider = st.radio(
-        "Preferred AI provider",
-        options=["anthropic", "openai", "mixed", "ollama"],
-        index=["anthropic", "openai", "mixed", "ollama"].index(
-            routing.get("provider_preference", "anthropic")
-        ),
+        "Default provider",
+        options=provider_keys,
+        format_func=lambda x: provider_labels[x],
+        index=provider_keys.index(current_provider) if current_provider in provider_keys else 0,
         horizontal=True,
-        help="Anthropic (Claude) recommended. OpenAI (GPT) also works. Ollama for local models.",
+        label_visibility="collapsed",
     )
 
     # Per-unit customization
     st.divider()
-    st.markdown("#### Per-unit settings")
-    st.caption("Adjust the relative weight and model tier for each operational unit. "
-               "Higher weight = more of the S1 budget goes to this unit.")
+    st.markdown("#### Per-unit model & weight")
+    st.caption("Pick a specific model for each unit and set its budget weight. "
+               "Higher weight = larger share of the S1 budget (65% of total).")
 
-    presets = MODEL_PRESETS.get(strategy, MODEL_PRESETS["balanced"])
-
-    model_tiers = {
-        "routine": f"Fast & cheap ({presets['s1_routine'].split('/')[-1]})",
-        "complex": f"Smart & powerful ({presets['s1_complex'].split('/')[-1]})",
-    }
-
-    unit_settings: list[dict] = []
-    cols_header = st.columns([2, 2, 2])
-    with cols_header[0]:
-        st.markdown("**Unit**")
-    with cols_header[1]:
-        st.markdown("**Model tier**")
-    with cols_header[2]:
-        st.markdown("**Weight**")
-
+    updated_units = []
     for i, unit in enumerate(units):
         uname = unit.get("name", f"Unit {i+1}")
-        c1, c2, c3 = st.columns([2, 2, 2])
-        with c1:
-            st.markdown(f"**{uname}**")
-            st.caption(unit.get("purpose", "")[:60])
-        with c2:
-            tier = st.selectbox(
-                f"Model for {uname}",
-                options=list(model_tiers.keys()),
-                format_func=lambda x: model_tiers[x],
-                index=0,
-                key=f"unit_tier_{i}",
-                label_visibility="collapsed",
-            )
-        with c3:
-            weight = st.slider(
-                f"Weight for {uname}",
-                min_value=1,
-                max_value=10,
-                value=5,
-                key=f"unit_weight_{i}",
-                label_visibility="collapsed",
-            )
-        unit_settings.append({"name": uname, "tier": tier, "weight": weight})
+        current_model = unit.get("model", "")
+        current_weight = unit.get("weight", 5)
+
+        with st.expander(f"**{uname}** — {unit.get('purpose', '')[:50]}", expanded=True):
+            c1, c2 = st.columns([3, 1])
+            with c1:
+                model_options = ["(auto — use strategy default)"] + all_models
+                default_idx = 0
+                if current_model and current_model in all_models:
+                    default_idx = all_models.index(current_model) + 1
+
+                selected_model = st.selectbox(
+                    f"Model for {uname}",
+                    options=model_options,
+                    index=default_idx,
+                    key=f"unit_model_{i}",
+                    label_visibility="collapsed",
+                )
+                if selected_model != "(auto — use strategy default)":
+                    info = MODEL_CATALOG.get(selected_model, {})
+                    st.caption(f"{info.get('tier', '').title()} — {info.get('note', '')}")
+
+            with c2:
+                weight = st.slider(
+                    "Weight",
+                    min_value=1,
+                    max_value=10,
+                    value=int(current_weight),
+                    key=f"unit_weight_{i}",
+                    label_visibility="collapsed",
+                )
+
+            unit_copy = dict(unit)
+            if selected_model and selected_model != "(auto — use strategy default)":
+                unit_copy["model"] = selected_model
+            elif "model" in unit_copy:
+                del unit_copy["model"]
+            unit_copy["weight"] = weight
+            updated_units.append(unit_copy)
 
     # Budget alerts
     st.divider()
@@ -309,18 +343,20 @@ def _step_budget() -> None:
     with col_limit:
         limit_pct = st.number_input("Auto-downgrade at %", value=95, min_value=50, max_value=100, step=5)
 
-    # Preview
+    # Live preview using the ACTUAL unit settings
     st.divider()
-    from viableos.budget import calculate_budget
+    st.markdown("#### Budget preview (live)")
 
-    preview_config = dict(config)
-    preview_config.setdefault("viable_system", {})
-    preview_config["viable_system"]["budget"] = {"monthly_usd": monthly, "strategy": strategy}
-    preview_config["viable_system"]["model_routing"] = {"provider_preference": provider}
-
+    preview_config = {
+        "viable_system": {
+            **vs,
+            "system_1": updated_units,
+            "budget": {"monthly_usd": monthly, "strategy": strategy},
+            "model_routing": {"provider_preference": provider},
+        }
+    }
     plan = calculate_budget(preview_config)
 
-    st.markdown("#### Budget preview")
     for alloc in plan.allocations:
         pct_bar = int(alloc.percentage / 2)
         bar = "█" * pct_bar + "░" * (50 - pct_bar)
@@ -332,6 +368,7 @@ def _step_budget() -> None:
         _go(2)
         st.rerun()
     if nxt:
+        config["viable_system"]["system_1"] = updated_units
         config["viable_system"]["budget"] = {
             "monthly_usd": monthly,
             "strategy": strategy,
@@ -341,8 +378,6 @@ def _step_budget() -> None:
             ],
         }
         config["viable_system"]["model_routing"] = {"provider_preference": provider}
-        # Store per-unit settings in session for dashboard use
-        st.session_state["_unit_settings"] = unit_settings
         set_config(config)
         _go(4)
         st.rerun()
@@ -369,17 +404,21 @@ def _step_hitl() -> None:
         label_visibility="collapsed",
     )
 
-    # Approval required — multi-choice + free text
+    # Approval required
     st.divider()
     st.markdown("#### Needs your approval")
     st.caption("Agents will **stop and wait** for your OK before doing these things.")
 
     existing_approval = hitl.get("approval_required", [])
+    default_approval = [p for p in APPROVAL_PRESETS if any(
+        p.lower().replace(" ", "_") == a.lower().replace(" ", "_") or p == a
+        for a in existing_approval
+    )] or APPROVAL_PRESETS[:3]
 
     approval_selected = st.multiselect(
-        "Select from common approvals",
+        "Select approval items",
         options=APPROVAL_PRESETS,
-        default=[p for p in APPROVAL_PRESETS if p.lower().replace(" ", "_") in [a.lower().replace(" ", "_") for a in existing_approval]] or APPROVAL_PRESETS[:3],
+        default=default_approval,
         key="hitl_approval",
         label_visibility="collapsed",
     )
@@ -396,10 +435,16 @@ def _step_hitl() -> None:
     st.markdown("#### Sent for your review")
     st.caption("Agents can proceed, but they will share results for you to check.")
 
+    existing_review = hitl.get("review_required", [])
+    default_review = [p for p in REVIEW_PRESETS if any(
+        p.lower().replace(" ", "_") == r.lower().replace(" ", "_") or p == r
+        for r in existing_review
+    )] or REVIEW_PRESETS[:2]
+
     review_selected = st.multiselect(
-        "Select from common review items",
+        "Select review items",
         options=REVIEW_PRESETS,
-        default=[p for p in REVIEW_PRESETS if p.lower().replace(" ", "_") in [r.lower().replace(" ", "_") for r in hitl.get("review_required", [])]] or REVIEW_PRESETS[:2],
+        default=default_review,
         key="hitl_review",
         label_visibility="collapsed",
     )
@@ -416,10 +461,16 @@ def _step_hitl() -> None:
     st.markdown("#### Emergency alerts")
     st.caption("These **interrupt you immediately**, no matter what.")
 
+    existing_emergency = hitl.get("emergency_alerts", [])
+    default_emergency = [p for p in EMERGENCY_PRESETS if any(
+        p.lower().replace(" ", "_") == e.lower().replace(" ", "_") or p == e
+        for e in existing_emergency
+    )] or EMERGENCY_PRESETS[:3]
+
     emergency_selected = st.multiselect(
-        "Select from common emergencies",
+        "Select emergency items",
         options=EMERGENCY_PRESETS,
-        default=[p for p in EMERGENCY_PRESETS if p.lower().replace(" ", "_") in [e.lower().replace(" ", "_") for e in hitl.get("emergency_alerts", [])]] or EMERGENCY_PRESETS[:3],
+        default=default_emergency,
         key="hitl_emergency",
         label_visibility="collapsed",
     )

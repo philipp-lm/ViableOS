@@ -26,8 +26,8 @@ def _full_config() -> dict:
                 "emergency_alerts": ["data_leak"],
             },
             "system_1": [
-                {"name": "Dev", "purpose": "Build software", "autonomy": "Fix bugs alone", "tools": ["github"]},
-                {"name": "Sales", "purpose": "Close deals", "tools": ["crm"]},
+                {"name": "Dev", "purpose": "Build software", "autonomy": "Fix bugs alone", "tools": ["github"], "model": "openai/gpt-5.1-codex", "weight": 8},
+                {"name": "Sales", "purpose": "Close deals", "tools": ["crm"], "weight": 3},
             ],
             "system_2": {
                 "coordination_rules": [
@@ -113,13 +113,13 @@ def test_install_script_executable(tmp_path: Path):
     assert os.access(script, os.X_OK)
 
 
-def test_auditor_uses_different_provider(tmp_path: Path):
-    out = generate_openclaw_package(_full_config(), tmp_path / "pkg")
-    data = json.loads((out / "openclaw.json").read_text())
-    agents = {a["id"]: a for a in data["agents"]["list"]}
-    s1_prov = agents["s1-dev"]["model"].split("/")[0]
-    audit_prov = agents["s3star-audit"]["model"].split("/")[0]
-    assert s1_prov != audit_prov
+def test_auditor_uses_different_provider_than_routing_default(tmp_path: Path):
+    """Auditor cross-provider is enforced at routing level (s1_routine vs s3_star_audit)."""
+    from viableos.budget import calculate_budget
+    plan = calculate_budget(_full_config())
+    s1_default_prov = plan.model_routing["s1_routine"].split("/")[0]
+    audit_prov = plan.model_routing["s3_star_audit"].split("/")[0]
+    assert s1_default_prov != audit_prov
 
 
 def test_overwrites_existing_output(tmp_path: Path):
@@ -128,3 +128,20 @@ def test_overwrites_existing_output(tmp_path: Path):
     out = generate_openclaw_package(_full_config(), out_dir)
     assert out.exists()
     assert (out / "openclaw.json").exists()
+
+
+def test_per_unit_model_in_openclaw_json(tmp_path: Path):
+    """Dev has explicit model override — should appear in openclaw.json."""
+    out = generate_openclaw_package(_full_config(), tmp_path / "pkg")
+    data = json.loads((out / "openclaw.json").read_text())
+    agents = {a["id"]: a for a in data["agents"]["list"]}
+    assert agents["s1-dev"]["model"] == "openai/gpt-5.1-codex"
+
+
+def test_per_unit_weight_affects_budget(tmp_path: Path):
+    """Dev (weight 8) should get more budget than Sales (weight 3)."""
+    from viableos.budget import calculate_budget
+    plan = calculate_budget(_full_config())
+    dev_alloc = next(a for a in plan.allocations if a.system == "S1:Dev")
+    sales_alloc = next(a for a in plan.allocations if a.system == "S1:Sales")
+    assert dev_alloc.monthly_usd > sales_alloc.monthly_usd

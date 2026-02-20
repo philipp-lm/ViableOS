@@ -91,10 +91,14 @@ def generate_openclaw_package(
         soul = generate_s1_soul(unit, identity, coord_rules, hitl, other_units)
         (ws_path / "SOUL.md").write_text(soul)
 
-        alloc = next(
-            (a for a in plan.allocations if a.system == f"S1:{name}"), None
-        )
-        model = alloc.model if alloc else plan.model_routing.get("s1_routine", "")
+        unit_model = unit.get("model")
+        if unit_model:
+            model = unit_model
+        else:
+            alloc = next(
+                (a for a in plan.allocations if a.system == f"S1:{name}"), None
+            )
+            model = alloc.model if alloc else plan.model_routing.get("s1_routine", "")
 
         all_agents.append(
             {"name": name, "role": "Operations (S1)", "purpose": unit.get("purpose", "")}

@@ -1,6 +1,6 @@
 """Tests for the budget calculator."""
 
-from viableos.budget import BudgetPlan, calculate_budget
+from viableos.budget import BudgetPlan, calculate_budget, get_all_models, get_models_for_provider
 
 
 def _make_config(
@@ -8,11 +8,15 @@ def _make_config(
     strategy: str = "balanced",
     provider: str = "anthropic",
     num_units: int = 3,
+    unit_overrides: list[dict] | None = None,
 ) -> dict:
-    units = [
-        {"name": f"Unit {i+1}", "purpose": f"Purpose {i+1}"}
-        for i in range(num_units)
-    ]
+    if unit_overrides:
+        units = unit_overrides
+    else:
+        units = [
+            {"name": f"Unit {i+1}", "purpose": f"Purpose {i+1}"}
+            for i in range(num_units)
+        ]
     return {
         "viable_system": {
             "name": "Test System",
@@ -54,7 +58,7 @@ def test_frugal_uses_cheaper_models():
 
 def test_performance_uses_expensive_models():
     plan = calculate_budget(_make_config(strategy="performance"))
-    assert "opus" in plan.model_routing["s1_complex"] or "o3" in plan.model_routing["s1_complex"]
+    assert "opus" in plan.model_routing["s1_complex"]
 
 
 def test_openai_provider_swaps_models():
@@ -62,10 +66,22 @@ def test_openai_provider_swaps_models():
     assert "openai" in plan.model_routing["s1_routine"]
 
 
+def test_google_provider_swaps_models():
+    plan = calculate_budget(_make_config(provider="google"))
+    assert "google" in plan.model_routing["s1_routine"] or "gemini" in plan.model_routing["s1_routine"]
+
+
 def test_cross_provider_audit():
     plan_anthropic = calculate_budget(_make_config(provider="anthropic"))
     s1_prov = plan_anthropic.model_routing["s1_routine"].split("/")[0]
     audit_prov = plan_anthropic.model_routing["s3_star_audit"].split("/")[0]
+    assert s1_prov != audit_prov
+
+
+def test_cross_provider_audit_google():
+    plan = calculate_budget(_make_config(provider="google"))
+    s1_prov = plan.model_routing["s1_routine"].split("/")[0]
+    audit_prov = plan.model_routing["s3_star_audit"].split("/")[0]
     assert s1_prov != audit_prov
 
 
@@ -88,3 +104,59 @@ def test_default_values_when_no_budget():
     plan = calculate_budget(config)
     assert plan.total_monthly_usd == 150.0
     assert plan.strategy == "balanced"
+
+
+def test_per_unit_model_override():
+    """Per-unit model override should be used in allocation."""
+    units = [
+        {"name": "Dev", "purpose": "Build", "model": "openai/gpt-5.2"},
+        {"name": "Sales", "purpose": "Sell"},
+    ]
+    plan = calculate_budget(_make_config(unit_overrides=units))
+    dev_alloc = next(a for a in plan.allocations if a.system == "S1:Dev")
+    sales_alloc = next(a for a in plan.allocations if a.system == "S1:Sales")
+    assert dev_alloc.model == "openai/gpt-5.2"
+    assert dev_alloc.model != sales_alloc.model
+
+
+def test_per_unit_weight_changes_budget():
+    """Higher weight should get more budget."""
+    units = [
+        {"name": "Heavy", "purpose": "A", "weight": 10},
+        {"name": "Light", "purpose": "B", "weight": 1},
+    ]
+    plan = calculate_budget(_make_config(unit_overrides=units))
+    heavy = next(a for a in plan.allocations if a.system == "S1:Heavy")
+    light = next(a for a in plan.allocations if a.system == "S1:Light")
+    assert heavy.monthly_usd > light.monthly_usd * 5
+
+
+def test_weights_sum_correctly():
+    """Weighted units should still sum to S1 budget."""
+    units = [
+        {"name": "A", "purpose": "X", "weight": 8},
+        {"name": "B", "purpose": "Y", "weight": 2},
+        {"name": "C", "purpose": "Z", "weight": 5},
+    ]
+    plan = calculate_budget(_make_config(monthly_usd=200, unit_overrides=units))
+    s1_allocs = [a for a in plan.allocations if a.system.startswith("S1:")]
+    total_s1 = sum(a.monthly_usd for a in s1_allocs)
+    expected = 200 * 0.65
+    assert abs(total_s1 - expected) < 1.0
+
+
+def test_model_catalog_has_all_providers():
+    models = get_all_models()
+    providers = {m.split("/")[0] for m in models}
+    assert "anthropic" in providers
+    assert "openai" in providers
+    assert "google" in providers
+    assert "deepseek" in providers
+    assert "xai" in providers
+    assert "meta" in providers
+
+
+def test_get_models_for_provider():
+    anthropic_models = get_models_for_provider("anthropic")
+    assert len(anthropic_models) >= 3
+    assert all("anthropic" in m for m in anthropic_models)

@@ -78,6 +78,8 @@ def _sidebar() -> None:
         st.caption("Load a fully configured system instantly.")
 
         for key, info in TEMPLATE_INFO.items():
+            if key == "custom":
+                continue
             if st.button(f"{info['name']}", key=f"demo_{key}", use_container_width=True):
                 _load_demo(key)
 

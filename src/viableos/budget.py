@@ -1,4 +1,7 @@
-"""Budget calculator — maps strategy + monthly_usd to per-system model allocations."""
+"""Budget calculator — maps strategy + monthly_usd to per-system model allocations.
+
+Supports per-unit model and weight overrides from the config.
+"""
 
 from __future__ import annotations
 
@@ -23,48 +26,115 @@ FRIENDLY_NAMES = {
     "S5": "Policy Guardian",
 }
 
+# ── Full model catalog (Feb 2026) ───────────────────────────────────────────
+
+MODEL_CATALOG: dict[str, dict[str, str]] = {
+    # Anthropic
+    "anthropic/claude-opus-4-6": {"provider": "anthropic", "tier": "premium", "note": "Best reasoning + agents"},
+    "anthropic/claude-sonnet-4-6": {"provider": "anthropic", "tier": "high", "note": "Best speed/quality balance"},
+    "anthropic/claude-haiku-4-5": {"provider": "anthropic", "tier": "fast", "note": "Fast, cheap, near-frontier"},
+    "anthropic/claude-opus-4-5": {"provider": "anthropic", "tier": "premium", "note": "Previous gen top"},
+    "anthropic/claude-sonnet-4-5": {"provider": "anthropic", "tier": "high", "note": "Previous gen high"},
+    # OpenAI
+    "openai/gpt-5.2": {"provider": "openai", "tier": "premium", "note": "Latest flagship"},
+    "openai/gpt-5.1": {"provider": "openai", "tier": "high", "note": "Strong all-round"},
+    "openai/gpt-5.1-codex": {"provider": "openai", "tier": "premium", "note": "Best for code tasks"},
+    "openai/gpt-5-mini": {"provider": "openai", "tier": "fast", "note": "Budget flagship"},
+    "openai/gpt-5-codex-mini": {"provider": "openai", "tier": "fast", "note": "Budget code model"},
+    "openai/o3": {"provider": "openai", "tier": "premium", "note": "Specialized reasoning"},
+    # Google
+    "google/gemini-3-pro": {"provider": "google", "tier": "premium", "note": "Top-ranked overall"},
+    "google/gemini-3-flash": {"provider": "google", "tier": "high", "note": "Fast + capable"},
+    "google/gemini-2.5-pro": {"provider": "google", "tier": "high", "note": "Strong reasoning"},
+    "google/gemini-2.5-flash": {"provider": "google", "tier": "fast", "note": "Budget, 1M context"},
+    "google/gemini-2.5-flash-lite": {"provider": "google", "tier": "budget", "note": "Cheapest Gemini"},
+    # DeepSeek
+    "deepseek/deepseek-v3.2": {"provider": "deepseek", "tier": "high", "note": "Open source, competitive"},
+    # xAI
+    "xai/grok-4": {"provider": "xai", "tier": "premium", "note": "256K context, fast"},
+    # Meta
+    "meta/llama-4": {"provider": "meta", "tier": "high", "note": "Open source, self-hostable"},
+    # Ollama (local)
+    "ollama/llama-4": {"provider": "ollama", "tier": "high", "note": "Local Llama 4"},
+    "ollama/mistral-large": {"provider": "ollama", "tier": "high", "note": "Local Mistral"},
+    "ollama/deepseek-v3": {"provider": "ollama", "tier": "high", "note": "Local DeepSeek"},
+}
+
+MODEL_TIERS = {
+    "premium": "Premium — best quality, highest cost",
+    "high": "High — strong quality, moderate cost",
+    "fast": "Fast — good quality, low cost",
+    "budget": "Budget — basic quality, minimal cost",
+}
+
+# ── Strategy presets (updated to Feb 2026 models) ───────────────────────────
+
 MODEL_PRESETS: dict[str, dict[str, str]] = {
     "frugal": {
-        "s1_routine": "anthropic/claude-haiku-3-5",
-        "s1_complex": "anthropic/claude-haiku-3-5",
-        "s2_coordination": "anthropic/claude-haiku-3-5",
-        "s3_optimization": "anthropic/claude-haiku-3-5",
-        "s3_star_audit": "openai/gpt-4o-mini",
-        "s4_intelligence": "anthropic/claude-sonnet-4-5",
-        "s5_preparation": "anthropic/claude-haiku-3-5",
+        "s1_routine": "anthropic/claude-haiku-4-5",
+        "s1_complex": "anthropic/claude-haiku-4-5",
+        "s2_coordination": "anthropic/claude-haiku-4-5",
+        "s3_optimization": "anthropic/claude-haiku-4-5",
+        "s3_star_audit": "openai/gpt-5-mini",
+        "s4_intelligence": "anthropic/claude-sonnet-4-6",
+        "s5_preparation": "anthropic/claude-haiku-4-5",
     },
     "balanced": {
-        "s1_routine": "anthropic/claude-haiku-3-5",
-        "s1_complex": "anthropic/claude-sonnet-4-5",
-        "s2_coordination": "anthropic/claude-haiku-3-5",
-        "s3_optimization": "anthropic/claude-sonnet-4-5",
-        "s3_star_audit": "openai/gpt-4o",
+        "s1_routine": "anthropic/claude-haiku-4-5",
+        "s1_complex": "anthropic/claude-sonnet-4-6",
+        "s2_coordination": "anthropic/claude-haiku-4-5",
+        "s3_optimization": "anthropic/claude-sonnet-4-6",
+        "s3_star_audit": "openai/gpt-5.1",
         "s4_intelligence": "anthropic/claude-opus-4-6",
-        "s5_preparation": "anthropic/claude-sonnet-4-5",
+        "s5_preparation": "anthropic/claude-sonnet-4-6",
     },
     "performance": {
-        "s1_routine": "anthropic/claude-sonnet-4-5",
+        "s1_routine": "anthropic/claude-sonnet-4-6",
         "s1_complex": "anthropic/claude-opus-4-6",
-        "s2_coordination": "anthropic/claude-sonnet-4-5",
+        "s2_coordination": "anthropic/claude-sonnet-4-6",
         "s3_optimization": "anthropic/claude-opus-4-6",
-        "s3_star_audit": "openai/gpt-4o",
-        "s4_intelligence": "anthropic/claude-opus-4-6",
+        "s3_star_audit": "openai/gpt-5.2",
+        "s4_intelligence": "google/gemini-3-pro",
         "s5_preparation": "anthropic/claude-opus-4-6",
     },
 }
 
 PROVIDER_OVERRIDES: dict[str, dict[str, str]] = {
     "openai": {
-        "anthropic/claude-haiku-3-5": "openai/gpt-4o-mini",
-        "anthropic/claude-sonnet-4-5": "openai/gpt-4o",
-        "anthropic/claude-opus-4-6": "openai/o3",
+        "anthropic/claude-haiku-4-5": "openai/gpt-5-mini",
+        "anthropic/claude-sonnet-4-6": "openai/gpt-5.1",
+        "anthropic/claude-opus-4-6": "openai/gpt-5.2",
+    },
+    "google": {
+        "anthropic/claude-haiku-4-5": "google/gemini-2.5-flash",
+        "anthropic/claude-sonnet-4-6": "google/gemini-3-flash",
+        "anthropic/claude-opus-4-6": "google/gemini-3-pro",
+        "openai/gpt-5-mini": "google/gemini-2.5-flash",
+        "openai/gpt-5.1": "google/gemini-3-flash",
+        "openai/gpt-5.2": "google/gemini-3-pro",
+    },
+    "deepseek": {
+        "anthropic/claude-haiku-4-5": "deepseek/deepseek-v3.2",
+        "anthropic/claude-sonnet-4-6": "deepseek/deepseek-v3.2",
+        "anthropic/claude-opus-4-6": "deepseek/deepseek-v3.2",
+    },
+    "xai": {
+        "anthropic/claude-haiku-4-5": "xai/grok-4",
+        "anthropic/claude-sonnet-4-6": "xai/grok-4",
+        "anthropic/claude-opus-4-6": "xai/grok-4",
+    },
+    "meta": {
+        "anthropic/claude-haiku-4-5": "meta/llama-4",
+        "anthropic/claude-sonnet-4-6": "meta/llama-4",
+        "anthropic/claude-opus-4-6": "meta/llama-4",
     },
     "ollama": {
-        "anthropic/claude-haiku-3-5": "ollama/llama3.3-8b",
-        "anthropic/claude-sonnet-4-5": "ollama/llama3.3-70b",
-        "anthropic/claude-opus-4-6": "ollama/llama3.3-70b",
-        "openai/gpt-4o": "ollama/mistral-large",
-        "openai/gpt-4o-mini": "ollama/mistral-7b",
+        "anthropic/claude-haiku-4-5": "ollama/llama-4",
+        "anthropic/claude-sonnet-4-6": "ollama/llama-4",
+        "anthropic/claude-opus-4-6": "ollama/llama-4",
+        "openai/gpt-5-mini": "ollama/llama-4",
+        "openai/gpt-5.1": "ollama/mistral-large",
+        "openai/gpt-5.2": "ollama/deepseek-v3",
     },
 }
 
@@ -93,8 +163,26 @@ def _apply_provider_pref(model: str, provider: str) -> str:
     return model
 
 
+def get_models_for_provider(provider: str) -> list[str]:
+    """Return model IDs available for a given provider."""
+    if provider == "mixed":
+        return sorted(MODEL_CATALOG.keys())
+    return sorted(
+        m for m, info in MODEL_CATALOG.items()
+        if info["provider"] == provider
+    )
+
+
+def get_all_models() -> list[str]:
+    """Return all model IDs sorted by provider."""
+    return sorted(MODEL_CATALOG.keys())
+
+
 def calculate_budget(config: dict[str, Any]) -> BudgetPlan:
-    """Calculate budget allocations from a parsed ViableOS config."""
+    """Calculate budget allocations from a parsed ViableOS config.
+
+    Respects per-unit `model` and `weight` overrides in system_1 items.
+    """
     vs = config.get("viable_system", {})
     budget_cfg = vs.get("budget", {})
     monthly = budget_cfg.get("monthly_usd", 150.0)
@@ -104,7 +192,6 @@ def calculate_budget(config: dict[str, Any]) -> BudgetPlan:
 
     presets = MODEL_PRESETS.get(strategy, MODEL_PRESETS["balanced"])
     s1_units = vs.get("system_1", [])
-    num_s1 = max(len(s1_units), 1)
 
     routing: dict[str, str] = {}
     for key, model in presets.items():
@@ -114,27 +201,38 @@ def calculate_budget(config: dict[str, Any]) -> BudgetPlan:
         else:
             routing[key] = _apply_provider_pref(model, provider)
 
-    # Cross-provider audit: if s3_star uses same base provider as s1, swap it
+    # Cross-provider audit
     s1_provider = routing["s1_routine"].split("/")[0]
     s3star_provider = routing["s3_star_audit"].split("/")[0]
     if s1_provider == s3star_provider:
         if s1_provider == "anthropic":
-            routing["s3_star_audit"] = "openai/gpt-4o"
+            routing["s3_star_audit"] = "openai/gpt-5.1"
         elif s1_provider == "openai":
-            routing["s3_star_audit"] = "anthropic/claude-sonnet-4-5"
+            routing["s3_star_audit"] = "anthropic/claude-sonnet-4-6"
+        elif s1_provider == "google":
+            routing["s3_star_audit"] = "anthropic/claude-sonnet-4-6"
+        else:
+            routing["s3_star_audit"] = "openai/gpt-5.1"
 
     allocations: list[BudgetAllocation] = []
 
+    # S1 units with per-unit weight support
     s1_budget = monthly * SYSTEM_WEIGHT["S1"]
-    per_unit = s1_budget / num_s1
-    for unit in s1_units:
+    weights = [float(u.get("weight", 5)) for u in s1_units] if s1_units else [5.0]
+    total_weight = sum(weights) or 1.0
+
+    for i, unit in enumerate(s1_units):
+        w = weights[i]
+        unit_budget = s1_budget * (w / total_weight)
+        unit_model = unit.get("model") or routing["s1_routine"]
+
         allocations.append(
             BudgetAllocation(
                 system=f"S1:{unit.get('name', '?')}",
                 friendly_name=unit.get("name", "?"),
-                monthly_usd=round(per_unit, 2),
-                model=routing["s1_routine"],
-                percentage=round(SYSTEM_WEIGHT["S1"] / num_s1 * 100, 1),
+                monthly_usd=round(unit_budget, 2),
+                model=unit_model,
+                percentage=round(SYSTEM_WEIGHT["S1"] * (w / total_weight) * 100, 1),
             )
         )
 

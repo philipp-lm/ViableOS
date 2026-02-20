@@ -1,0 +1,81 @@
+viable_system:
+  name: "My Online Education Business"
+  runtime: "openclaw"
+
+  budget:
+    monthly_usd: 120
+    strategy: "balanced"
+
+  identity:
+    purpose: ""
+    values:
+      - "Quality over quantity"
+      - "Consistency builds trust"
+      - "Data-driven decisions"
+    decisions_requiring_human:
+      - "Course pricing"
+      - "Publishing new courses"
+      - "Student refunds"
+      - "Partnership agreements"
+
+  system_1:
+    - name: "Course Development"
+      purpose: "Create, update, and improve course content"
+      autonomy: "Can research and draft independently. Publishing needs approval."
+      tools: [writing, editing, research, video-editing, presentation-tools]
+
+    - name: "Student Success"
+      purpose: "Support students, manage community, track outcomes"
+      autonomy: "Can respond to standard questions. Refunds need approval."
+      tools: [email, chat, community-management, analytics, knowledge-base]
+
+    - name: "Growth"
+      purpose: "Attract students, partnerships, and revenue"
+      autonomy: "Can draft and analyze independently. Pricing and publishing need approval."
+      tools: [email-campaigns, social-media, seo-analysis, web-analytics, copywriting]
+
+  system_2:
+    coordination_rules:
+      - trigger: "Growth launches a campaign for a specific course"
+        action: "Notify Student Success to prepare for enrollment surge"
+      - trigger: "Student Success identifies repeated confusion on a topic"
+        action: "Notify Course Development to improve that section"
+      - trigger: "Course Development publishes an update"
+        action: "Notify Growth for announcement and Student Success for community update"
+
+  system_3:
+    reporting_rhythm: "weekly"
+    resource_allocation: "Course Development: 40%, Student Success: 30%, Growth: 30%"
+
+  system_3_star:
+    schedule: "bi-weekly"
+    checks:
+      - name: "Course Quality"
+        target: "Course Development"
+        method: "Review student ratings and completion rates for last updated course."
+      - name: "Student Satisfaction"
+        target: "Student Success"
+        method: "Check support response times and satisfaction scores."
+    on_failure: "Escalate to human"
+
+  system_4:
+    monitoring:
+      competitors: ["Other course creators in your niche", "Platform competitors"]
+      technology: ["Learning platform updates", "AI tutoring tools"]
+      regulation: ["Education regulations", "Refund policies", "Accessibility requirements"]
+
+  human_in_the_loop:
+    notification_channel: "email"
+    approval_required:
+      - "course_pricing"
+      - "publishing_new_courses"
+      - "student_refunds"
+      - "partnership_agreements"
+    review_required:
+      - "course_content_drafts"
+      - "marketing_campaigns"
+      - "student_outcome_reports"
+    emergency_alerts:
+      - "platform_outage"
+      - "mass_refund_request"
+      - "budget_exceeded_95"
