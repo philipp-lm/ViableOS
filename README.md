@@ -1,55 +1,43 @@
 # ViableOS
 
-**The operating system for viable AI agent organizations.**
+> Orchestration layer for multi-agent AI systems, based on [Stafford Beer's Viable System Model](https://en.wikipedia.org/wiki/Viable_system_model) (VSM).
 
-ViableOS applies [Stafford Beer's Viable System Model](https://en.wikipedia.org/wiki/Viable_system_model) — a 50-year proven organizational theory from management cybernetics — to AI multi-agent systems.
-
-You describe your business. We organize your agents.
+**Status: Early development.** Config schema and first runtime adapter in progress. Star/watch to follow along.
 
 ---
 
-## The Problem
+## What is this?
 
-Every multi-agent framework gives you building blocks: agents, tools, routing. None of them tells you **how to organize** your agents.
+Multi-agent frameworks (LangGraph, CrewAI, OpenAI Agents SDK, ...) give you agents, tools, and routing. They don't give you an organizational structure — who coordinates whom, who audits what, how to balance short-term execution with long-term adaptation.
 
-The result? 40% of multi-agent projects get scaled back or abandoned (Deloitte 2025) — not because the agents are bad, but because the *organization* is missing.
-
-## The Solution
-
-ViableOS provides the five control functions every agent system needs:
+ViableOS adds that layer. It sits on top of your existing agent framework and provides the six control functions from VSM:
 
 ```
-┌─────────────────────────────────────────────────┐
-│  S5  Identity     — Purpose, values, policies   │
-│  S4  Intelligence — Outside & future monitoring  │
-│  S3  Optimization — Resource allocation, synergy │
-│  S3* Audit        — Independent quality checks   │
-│  S2  Coordination — Conflict prevention, sync    │
-│  S1  Operations   — Your actual working agents   │
-├─────────────────────────────────────────────────┤
-│  Backends: OpenClaw │ LangGraph │ CrewAI │ ...  │
-└─────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────┐
+│  S5  Identity      Purpose, values, policies │
+│  S4  Intelligence  Environment monitoring    │
+│  S3  Optimization  Resource allocation       │
+│  S3* Audit         Independent verification  │
+│  S2  Coordination  Conflict prevention       │
+│  S1  Operations    Your actual agents        │
+├──────────────────────────────────────────────┤
+│  Runtime: OpenClaw · LangGraph · CrewAI      │
+│  LLMs:    Anthropic · OpenAI · Ollama · ...  │
+└──────────────────────────────────────────────┘
 ```
 
-## How It Works
+Framework-agnostic (pluggable runtime adapters). LLM-agnostic (any provider per system). Runs locally with Ollama or in the cloud.
 
-1. **Define your identity** — What is your system for? What are your values?
-2. **Identify operational units** — Guided segmentation of your S1 agents
-3. **Auto-generate the control system** — Coordination rules, KPIs, audit checks, intelligence scope
-4. **Deploy** — ViableOS generates agent configurations for your backend
-5. **Monitor** — Live dashboard detects organizational pathologies before they become failures
-
-## Configuration (Preview)
+## Config example
 
 ```yaml
 viable_system:
-  name: "My SaaS Business"
+  name: "My SaaS"
+  runtime: "openclaw"        # or: langgraph, crewai, openai-agents, cursor
 
   identity:
     purpose: "Help therapists focus on patients, not paperwork"
-    values:
-      - "Privacy above everything"
-      - "Simplicity over feature bloat"
+    values: ["Privacy above everything", "Simplicity over feature bloat"]
 
   system_1:
     - name: "Product Development"
@@ -66,82 +54,54 @@ viable_system:
     coordination_rules:
       - trigger: "Go-to-Market promises feature on website"
         action: "Validate with Product Development before publishing"
-      - trigger: "Product Development deploys new feature"
-        action: "Notify Go-to-Market for website update"
+
+  system_3_star:
+    checks:
+      - target: "Go-to-Market"
+        method: "Compare website claims against shipped features"
 ```
 
-## Features
+## Roadmap
 
-| Feature | Status |
-|---------|--------|
-| VSM Configuration DSL (YAML) | 🔜 Coming soon |
-| CLI: `viableos init` | 🔜 Coming soon |
-| OpenClaw Adapter | 🔜 Coming soon |
-| Industry Templates | 🔜 Coming soon |
-| Web Dashboard | 📋 Planned |
-| Pathology Detection Engine | 📋 Planned |
-| Recursion Engine | 📋 Planned |
-| LangGraph / CrewAI Adapters | 📋 Planned |
+| Component | Status |
+|-----------|--------|
+| VSM config schema (YAML) | In progress |
+| `viableos init` CLI | In progress |
+| OpenClaw runtime adapter | In progress |
+| Pathology detection | Planned |
+| Recursion engine (nested VSMs) | Planned |
+| LangGraph / CrewAI adapters | Planned |
+| Web dashboard | Planned |
+| Ollama / local LLM support | Planned |
 
-## Why VSM?
+## Architecture
 
-No existing multi-agent framework implements all five control functions:
+ViableOS reads a YAML config, validates it against VSM principles, and deploys agents to your runtime of choice. It's a layer between your config and your agent framework — not a replacement.
 
 ```
-                        S1    S2    S3    S3*   S4    S5
-                       Ops  Coord Optim Audit Intel Ident
-───────────────────────────────────────────────────────────
-CrewAI (Hierarchy)      ✅    ❌    ⚠️    ❌    ❌    ❌
-OpenAI Swarm            ✅    ❌    ❌    ❌    ❌    ❌
-AutoGen (Group Chat)    ⚠️    ⚠️    ❌    ❌    ❌    ❌
-LangGraph (Supervisor)  ✅    ❌    ⚠️    ❌    ❌    ❌
-───────────────────────────────────────────────────────────
-ViableOS                ✅    ✅    ✅    ✅    ✅    ✅
+     YAML Config  ──▶  VSM Core  ──▶  Runtime Adapter  ──▶  Your agents
+                       (parse,         (OpenClaw,
+                        validate)       LangGraph, ...)
 ```
 
-Every incomplete system develops **organizational pathologies** — predictable failures that worsen over time. ViableOS is the first framework designed to prevent them.
+## Background
 
-## Blog Series: The 7 Pathologies of AI Agent Teams
+VSM was developed by Stafford Beer in the 1970s. It defines the minimal set of control functions any organization needs to remain viable — applicable to companies, governments, and (we think) AI agent teams.
 
-1. [Your AI Agents Need an Org Chart — But Not the Kind You Think](#) *(coming soon)*
-2. The Dominance Problem: When One Agent Eats All Your Tokens
-3. Nobody's Watching: Why Your System Needs an Auditor
-4. Stuck in the Present: The Missing Intelligence Function
-5. The Coordination Tax: How Agent Communication Goes Wrong
-6. Multiple Personalities: When Agents Have No Shared Purpose
-7. From Chaos to Viable: The Fix
+- Beer, S. — *Brain of the Firm* (1972)
+- Pfiffner, M. — *Die dritte Dimension des Organisierens* (Springer, 2020)
 
-## Theoretical Foundation
+I'm building this because I ran into the exact same organizational pathologies in my own multi-agent setup (a healthcare SaaS) that I used to diagnose in large corporations as a strategy consultant. More context in the blog series:
 
-- **Stafford Beer** — *Brain of the Firm* (1972)
-- **Martin Pfiffner** — *Die dritte Dimension des Organisierens* (Springer, 2020)
-- 50+ years of validation across biology, corporations, and governments
-- The only organizational model proven to be both necessary and sufficient for viability
+1. [Your AI Agents Need an Org Chart — But Not the Kind You Think](#) *(draft)*
 
-## About the Author
+## Contributing
 
-**Philipp Enderle** — Engineer turned strategy consultant turned founder.
+This is early-stage. If you're interested in multi-agent organization, [open an issue](../../issues) or reach out.
 
-Background: Mechanical Engineering (KIT, B.Sc.) and Engineering & Management (TU Munich, M.Sc., UC Berkeley). Then 9 years of strategy consulting at Deloitte and Berylls by AlixPartners — designing organizational transformations, target operating models, and digital agile organizations for DAX automotive OEMs.
-
-After seeing the same structural pathologies in AI agent systems that I'd diagnosed in billion-dollar companies — missing coordination, no audit, zero strategic foresight — I started building ViableOS to bridge organizational cybernetics with multi-agent AI. My own healthcare SaaS ([Mola](https://github.com/philipp-lm/mola_app)) serves as the first production test case.
-
-- [LinkedIn](https://www.linkedin.com/in/philipp-enderle/)
-- [GitHub](https://github.com/philipp-lm)
-
-## Get Involved
-
-⭐ Star this repo to follow progress
-
-📬 [Subscribe to the newsletter](https://viableos.dev) for updates
-
-🐛 [Open an issue](../../issues) to share your multi-agent organization challenges
+- [Newsletter](https://buttondown.com/viableos)
+- [Blog series on Dev.to](#)
 
 ## License
 
-MIT — see [LICENSE](LICENSE) for details.
-
----
-
-*"There are many possible manifestations. There is one cybernetic solution."*
-— Stafford Beer
+MIT — see [LICENSE](LICENSE).
