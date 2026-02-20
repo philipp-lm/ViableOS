@@ -1,0 +1,40 @@
+viable_system:
+  name: "Complete System"
+
+  identity:
+    purpose: "A fully viable test system"
+    values:
+      - "Quality"
+    decisions_requiring_human:
+      - "Production deployments"
+
+  system_1:
+    - name: "Unit A"
+      purpose: "Do the work"
+      autonomy: "Full"
+      tools: [tool-a]
+    - name: "Unit B"
+      purpose: "Support the work"
+
+  system_2:
+    coordination_rules:
+      - trigger: "Unit A finishes task"
+        action: "Notify Unit B"
+
+  system_3:
+    reporting_rhythm: "weekly"
+    resource_allocation: "A: 60%, B: 40%"
+
+  system_3_star:
+    schedule: "bi-weekly"
+    checks:
+      - name: "Quality Check"
+        target: "Unit A"
+        method: "Review outputs"
+    on_failure: "Escalate"
+
+  system_4:
+    monitoring:
+      competitors: ["Rival Inc"]
+      technology: ["New frameworks"]
+      regulation: ["Data privacy laws"]

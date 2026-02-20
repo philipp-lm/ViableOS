@@ -1,0 +1,42 @@
+viable_system:
+  name: "My System"  # TODO: give your system a name
+  # runtime: "openclaw"  # optional: openclaw, langgraph, crewai, openai-agents, cursor
+
+  identity:  # = System 5
+    purpose: ""  # TODO: what is your system for?
+    values: []   # TODO: what principles guide decisions?
+    decisions_requiring_human:
+      - "Changes to production"  # TODO: adjust to your needs
+
+  system_1:
+    - name: ""        # TODO: name your first operational unit
+      purpose: ""     # TODO: what does it do?
+      autonomy: ""    # TODO: what can it do without approval?
+      tools: []       # TODO: what tools does it need?
+
+  system_2:
+    coordination_rules: []
+    # TODO: add rules that prevent agents from conflicting
+    # Example:
+    #   - trigger: "Agent A changes shared resource"
+    #     action: "Notify Agent B before proceeding"
+
+  system_3:
+    reporting_rhythm: "weekly"  # TODO: how often should the system be reviewed?
+    # resource_allocation: "Unit A: 50%, Unit B: 30%, Unit C: 20%"
+
+  system_3_star:
+    schedule: "bi-weekly"  # TODO: how often should audits run?
+    checks: []
+    # TODO: add independent verification checks
+    # Example:
+    #   - name: "Output Quality"
+    #     target: "Unit A"
+    #     method: "Verify the actual output matches the agent's report"
+    on_failure: "Escalate to human"
+
+  system_4:
+    monitoring:
+      competitors: []   # TODO: who are your competitors?
+      technology: []     # TODO: what tech changes should you watch?
+      regulation: []     # TODO: what regulations apply?

@@ -1,0 +1,9 @@
+viable_system:
+  name: "Minimal System"
+
+  identity:
+    purpose: "Just getting started"
+
+  system_1:
+    - name: "Solo Unit"
+      purpose: "Handle everything"

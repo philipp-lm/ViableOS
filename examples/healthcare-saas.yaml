@@ -1,0 +1,64 @@
+viable_system:
+  name: "German Healthcare SaaS"
+
+  identity:
+    purpose: "Help therapists focus on patients, not paperwork"
+    values:
+      - "Patient privacy above everything"
+      - "Simplicity over feature bloat"
+      - "Reliability over speed"
+    decisions_requiring_human:
+      - "Pricing changes"
+      - "Anything touching patient data"
+      - "Publishing to production"
+
+  system_1:
+    - name: "Product Development"
+      purpose: "Build and stabilize the software"
+      autonomy: "Can fix bugs independently. Features need approval."
+      tools: [github, testing, code-review]
+
+    - name: "Operations"
+      purpose: "Keep the platform running"
+      autonomy: "Can monitor and alert independently. Deployments need approval."
+      tools: [ssh, docker, log-analysis]
+
+    - name: "Go-to-Market"
+      purpose: "Get first customers"
+      autonomy: "Can draft content independently. Publishing needs approval."
+      tools: [website-editing, seo-analysis, copywriting]
+
+  system_2:
+    coordination_rules:
+      - trigger: "Go-to-Market mentions a feature on the website"
+        action: "Validate with Product Dev that the feature exists"
+
+      - trigger: "Product Dev deploys a new feature"
+        action: "Notify Go-to-Market for website update, Ops for monitoring"
+
+      - trigger: "Ops detects a performance issue after deployment"
+        action: "Notify Product Dev with logs and priority tag"
+
+  system_3:
+    reporting_rhythm: "weekly"
+    resource_allocation: "Dev: 60%, Ops: 20%, Go-to-Market: 20%"
+
+  system_3_star:
+    schedule: "bi-weekly"
+    checks:
+      - name: "Code Quality"
+        target: "Product Development"
+        method: "Read last 5 commits. Did tests actually pass? Check coverage."
+      - name: "Content Accuracy"
+        target: "Go-to-Market"
+        method: "Compare website claims against actual shipped features."
+      - name: "GDPR Compliance"
+        target: "All"
+        method: "Check if patient data leaked into agent prompts or logs."
+    on_failure: "Escalate to human immediately"
+
+  system_4:
+    monitoring:
+      competitors: ["TherapieApp", "PraxisPro", "SimplePractice"]
+      technology: ["New LLM releases", "Python/React breaking changes"]
+      regulation: ["GDPR updates", "Healthcare data laws"]

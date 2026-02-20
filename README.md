@@ -2,7 +2,7 @@
 
 > Orchestration layer for multi-agent AI systems, based on [Stafford Beer's Viable System Model](https://en.wikipedia.org/wiki/Viable_system_model) (VSM).
 
-**Status: Early development.** Config schema and first runtime adapter in progress. Star/watch to follow along.
+**Status: v0.1 — Config schema + CLI available.** Star/watch to follow along.
 
 ---
 
@@ -61,12 +61,47 @@ viable_system:
         method: "Compare website claims against shipped features"
 ```
 
+## Install
+
+```bash
+git clone https://github.com/philipp-lm/ViableOS.git
+cd ViableOS
+pip install -e .
+```
+
+## Usage
+
+```bash
+# Generate a starter config
+viableos init
+
+# Check your config against VSM principles
+viableos check viableos.yaml
+```
+
+Example output:
+
+```
+━━━ ViableOS Viability Check ━━━
+
+  ✅ S1  Operations     3 units: Product Development, Operations, Go-to-Market
+  ✅ S2  Coordination   3 rules defined
+  ✅ S3  Optimization   Weekly reporting, resource allocation set
+  ✅ S3* Audit          3 checks: Code Quality, Content Accuracy, GDPR Compliance
+  ✅ S4  Intelligence   Monitoring: competitors, technology, regulation
+  ✅ S5  Identity       Purpose: "Help therapists focus on patients, not paperwork"
+
+Viability Score: 6/6 — Your system is fully viable.
+```
+
+See [`examples/healthcare-saas.yaml`](examples/healthcare-saas.yaml) for a complete config.
+
 ## Roadmap
 
 | Component | Status |
 |-----------|--------|
-| VSM config schema (YAML) | In progress |
-| `viableos init` CLI | In progress |
+| VSM config schema (YAML) | **v0.1** |
+| `viableos init` + `viableos check` CLI | **v0.1** |
 | OpenClaw runtime adapter | In progress |
 | Pathology detection | Planned |
 | Recursion engine (nested VSMs) | Planned |
