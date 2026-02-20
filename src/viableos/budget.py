@@ -36,9 +36,11 @@ MODEL_CATALOG: dict[str, dict[str, str]] = {
     "anthropic/claude-opus-4-5": {"provider": "anthropic", "tier": "premium", "note": "Previous gen top"},
     "anthropic/claude-sonnet-4-5": {"provider": "anthropic", "tier": "high", "note": "Previous gen high"},
     # OpenAI
+    "openai/gpt-5.3-codex": {"provider": "openai", "tier": "premium", "note": "Best agentic coding model (Feb 2026)"},
+    "openai/gpt-5.3-codex-spark": {"provider": "openai", "tier": "high", "note": "Ultra-fast coding, 1000+ tok/s"},
     "openai/gpt-5.2": {"provider": "openai", "tier": "premium", "note": "Latest flagship"},
     "openai/gpt-5.1": {"provider": "openai", "tier": "high", "note": "Strong all-round"},
-    "openai/gpt-5.1-codex": {"provider": "openai", "tier": "premium", "note": "Best for code tasks"},
+    "openai/gpt-5.1-codex": {"provider": "openai", "tier": "premium", "note": "Code-focused"},
     "openai/gpt-5-mini": {"provider": "openai", "tier": "fast", "note": "Budget flagship"},
     "openai/gpt-5-codex-mini": {"provider": "openai", "tier": "fast", "note": "Budget code model"},
     "openai/o3": {"provider": "openai", "tier": "premium", "note": "Specialized reasoning"},

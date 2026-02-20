@@ -226,9 +226,43 @@ def _step_customize() -> None:
 
 # ── Step 3: Budget & Models ────────────────────────────────────────────────
 
+_AUTO = "(auto — use strategy default)"
+
+SYSTEM_MODEL_KEYS = {
+    "S2 Coordinator": "s2_coordination",
+    "S3 Optimizer": "s3_optimization",
+    "S3* Auditor": "s3_star_audit",
+    "S4 Scout": "s4_intelligence",
+    "S5 Policy Guardian": "s5_preparation",
+}
+
+SYSTEM_DESCRIPTIONS = {
+    "S2 Coordinator": "Prevents conflicts between operational units — lightweight, needs speed",
+    "S3 Optimizer": "Manages resources, creates weekly digest — needs analytical power",
+    "S3* Auditor": "Independent quality checks — should use different provider than S1",
+    "S4 Scout": "Monitors environment, strategic briefs — needs strong reasoning",
+    "S5 Policy Guardian": "Enforces values, prepares human decisions — needs precision",
+}
+
+
+def _model_selector(label: str, current: str, all_models: list[str], key: str) -> str:
+    """Reusable model selectbox with auto option. Returns model ID or empty string."""
+    options = [_AUTO] + all_models
+    idx = 0
+    if current and current in all_models:
+        idx = all_models.index(current) + 1
+    selected = st.selectbox(label, options=options, index=idx, key=key, label_visibility="collapsed")
+    if selected != _AUTO:
+        info = MODEL_CATALOG.get(selected, {})
+        st.caption(f"{info.get('tier', '').title()} — {info.get('note', '')}")
+        return selected
+    return ""
+
+
 def _step_budget() -> None:
     step_header(3, TOTAL_STEPS, "Budget & AI Models",
-                "Set your budget, choose models per unit, and see how it all distributes.")
+                "Set your budget and choose models for every system. "
+                "Expand each section to override the strategy default.")
 
     config = get_config()
     vs = config.get("viable_system", {})
@@ -238,7 +272,7 @@ def _step_budget() -> None:
 
     all_models = get_all_models()
 
-    # Global settings
+    # ── Global settings ──────────────────────────────────────────────────
     st.markdown("#### Global settings")
 
     col_budget, col_strategy = st.columns(2)
@@ -266,12 +300,12 @@ def _step_budget() -> None:
     st.markdown("#### Default provider")
     provider_labels = {
         "anthropic": "Anthropic (Claude)",
-        "openai": "OpenAI (GPT, Codex, o3)",
+        "openai": "OpenAI (GPT-5.x, Codex, o3)",
         "google": "Google (Gemini)",
         "deepseek": "DeepSeek",
         "xai": "xAI (Grok)",
         "meta": "Meta (Llama)",
-        "mixed": "Mixed (pick per unit)",
+        "mixed": "Mixed (pick per system)",
         "ollama": "Ollama (local models)",
     }
     provider_keys = list(provider_labels.keys())
@@ -285,11 +319,10 @@ def _step_budget() -> None:
         label_visibility="collapsed",
     )
 
-    # Per-unit customization
+    # ── S1: Per-unit model & weight ──────────────────────────────────────
     st.divider()
-    st.markdown("#### Per-unit model & weight")
-    st.caption("Pick a specific model for each unit and set its budget weight. "
-               "Higher weight = larger share of the S1 budget (65% of total).")
+    st.markdown("#### S1 — Operational Units (65% of budget)")
+    st.caption("Pick a model and budget weight for each unit.")
 
     updated_units = []
     for i, unit in enumerate(units):
@@ -297,44 +330,49 @@ def _step_budget() -> None:
         current_model = unit.get("model", "")
         current_weight = unit.get("weight", 5)
 
-        with st.expander(f"**{uname}** — {unit.get('purpose', '')[:50]}", expanded=True):
+        with st.expander(f"**{uname}** — {unit.get('purpose', '')[:50]}", expanded=False):
             c1, c2 = st.columns([3, 1])
             with c1:
-                model_options = ["(auto — use strategy default)"] + all_models
-                default_idx = 0
-                if current_model and current_model in all_models:
-                    default_idx = all_models.index(current_model) + 1
-
-                selected_model = st.selectbox(
-                    f"Model for {uname}",
-                    options=model_options,
-                    index=default_idx,
-                    key=f"unit_model_{i}",
-                    label_visibility="collapsed",
-                )
-                if selected_model != "(auto — use strategy default)":
-                    info = MODEL_CATALOG.get(selected_model, {})
-                    st.caption(f"{info.get('tier', '').title()} — {info.get('note', '')}")
-
+                sel = _model_selector(f"Model for {uname}", current_model, all_models, f"unit_model_{i}")
             with c2:
                 weight = st.slider(
-                    "Weight",
+                    "Budget weight",
                     min_value=1,
                     max_value=10,
                     value=int(current_weight),
                     key=f"unit_weight_{i}",
                     label_visibility="collapsed",
+                    help="Higher = larger share of S1 budget",
                 )
 
             unit_copy = dict(unit)
-            if selected_model and selected_model != "(auto — use strategy default)":
-                unit_copy["model"] = selected_model
+            if sel:
+                unit_copy["model"] = sel
             elif "model" in unit_copy:
                 del unit_copy["model"]
             unit_copy["weight"] = weight
             updated_units.append(unit_copy)
 
-    # Budget alerts
+    # ── S2-S5: Per-system model selection ────────────────────────────────
+    st.divider()
+    st.markdown("#### Management Systems (35% of budget)")
+    st.caption("Override the default model for each management system.")
+
+    updated_routing: dict[str, str] = {}
+
+    for sys_label, routing_key in SYSTEM_MODEL_KEYS.items():
+        current = routing.get(routing_key, "")
+        with st.expander(f"**{sys_label}** — {SYSTEM_DESCRIPTIONS[sys_label]}", expanded=False):
+            sel = _model_selector(
+                f"Model for {sys_label}",
+                current,
+                all_models,
+                f"sys_model_{routing_key}",
+            )
+            if sel:
+                updated_routing[routing_key] = sel
+
+    # ── Budget alerts ────────────────────────────────────────────────────
     st.divider()
     st.markdown("#### Budget alerts")
     col_warn, col_limit = st.columns(2)
@@ -343,16 +381,17 @@ def _step_budget() -> None:
     with col_limit:
         limit_pct = st.number_input("Auto-downgrade at %", value=95, min_value=50, max_value=100, step=5)
 
-    # Live preview using the ACTUAL unit settings
+    # ── Live preview ─────────────────────────────────────────────────────
     st.divider()
     st.markdown("#### Budget preview (live)")
 
+    preview_routing = {"provider_preference": provider, **updated_routing}
     preview_config = {
         "viable_system": {
             **vs,
             "system_1": updated_units,
             "budget": {"monthly_usd": monthly, "strategy": strategy},
-            "model_routing": {"provider_preference": provider},
+            "model_routing": preview_routing,
         }
     }
     plan = calculate_budget(preview_config)
@@ -377,7 +416,10 @@ def _step_budget() -> None:
                 {"at_percent": limit_pct, "action": "downgrade_models"},
             ],
         }
-        config["viable_system"]["model_routing"] = {"provider_preference": provider}
+        config["viable_system"]["model_routing"] = {
+            "provider_preference": provider,
+            **updated_routing,
+        }
         set_config(config)
         _go(4)
         st.rerun()
