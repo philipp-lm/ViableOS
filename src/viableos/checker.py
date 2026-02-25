@@ -337,6 +337,78 @@ def _check_rollout_readiness(vs: dict[str, Any]) -> list[Warning]:
     return warnings
 
 
+def _check_dependencies(vs: dict[str, Any]) -> list[Warning]:
+    """Validate that dependency targets reference existing S1 units."""
+    warnings = []
+    deps = vs.get("dependencies", [])
+    if not deps:
+        return warnings
+
+    unit_ids = set()
+    for unit in vs.get("system_1", []):
+        name_lower = unit.get("name", "").lower()
+        unit_ids.add(name_lower)
+
+    for dep in deps:
+        for field in ("from", "to"):
+            ref = dep.get(field, "").lower()
+            if ref and not any(ref in uid or uid in ref for uid in unit_ids):
+                warnings.append(Warning(
+                    category="Dependencies",
+                    severity="warning",
+                    message=f"Dependency references '{dep.get(field)}' which doesn't match any S1 unit.",
+                    suggestion="Check that dependency from/to names align with your operational units.",
+                ))
+    return warnings
+
+
+def _check_success_criteria(vs: dict[str, Any]) -> list[Warning]:
+    """Check that success criteria are defined if assessment data is present."""
+    warnings = []
+    criteria = vs.get("success_criteria", [])
+    shared = vs.get("shared_resources", [])
+    domain_flow = vs.get("domain_flow")
+
+    has_assessment_data = bool(criteria) or bool(shared) or bool(domain_flow)
+
+    if has_assessment_data and not criteria:
+        warnings.append(Warning(
+            category="Assessment",
+            severity="info",
+            message="Assessment data detected but no success criteria defined.",
+            suggestion="Add success criteria to help the Optimizer track what matters.",
+        ))
+
+    critical = [c for c in criteria if c.get("priority", "").lower() in ("kritisch", "critical", "höchste", "highest")]
+    if critical:
+        has_s3star = bool(vs.get("system_3_star", {}).get("checks"))
+        if not has_s3star:
+            names = ", ".join(c["criterion"] for c in critical)
+            warnings.append(Warning(
+                category="Assessment",
+                severity="warning",
+                message=f"Critical success criteria ({names}) but no S3* audit checks to verify them.",
+                suggestion="Add audit checks that independently verify your critical success criteria.",
+            ))
+
+    return warnings
+
+
+def _check_sub_recursion(vs: dict[str, Any]) -> list[Warning]:
+    """Validate sub-unit consistency for units with recursion."""
+    warnings = []
+    for unit in vs.get("system_1", []):
+        sub_units = unit.get("sub_units", [])
+        if sub_units and len(sub_units) < 2:
+            warnings.append(Warning(
+                category="Recursion",
+                severity="info",
+                message=f"'{unit.get('name', '?')}' has only 1 sub-unit — recursion requires at least 2 independent parts.",
+                suggestion="Either add more sub-units or remove the recursion level.",
+            ))
+    return warnings
+
+
 def check_viability(config: dict[str, Any]) -> ViabilityReport:
     """Run all six VSM checks plus community-driven warnings."""
     vs = config.get("viable_system", {})
@@ -357,5 +429,8 @@ def check_viability(config: dict[str, Any]) -> ViabilityReport:
     warnings.extend(_check_security(vs))
     warnings.extend(_check_coordination_rules(vs))
     warnings.extend(_check_rollout_readiness(vs))
+    warnings.extend(_check_dependencies(vs))
+    warnings.extend(_check_success_criteria(vs))
+    warnings.extend(_check_sub_recursion(vs))
 
     return ViabilityReport(score=score, total=6, checks=checks, warnings=warnings)

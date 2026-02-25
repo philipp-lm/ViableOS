@@ -142,6 +142,32 @@ VIABLEOS_SCHEMA: dict[str, Any] = {
                             "tools": _STRING_ARRAY,
                             "model": {"type": "string"},
                             "weight": {"type": "number", "minimum": 1, "maximum": 10},
+                            "domain_context": {"type": "string"},
+                            "sub_units": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "required": ["name", "purpose"],
+                                    "additionalProperties": False,
+                                    "properties": {
+                                        "name": {"type": "string", "minLength": 1},
+                                        "purpose": {"type": "string"},
+                                        "priority": {"type": "number"},
+                                    },
+                                },
+                            },
+                            "dependencies": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "required": ["target", "description"],
+                                    "additionalProperties": False,
+                                    "properties": {
+                                        "target": {"type": "string"},
+                                        "description": {"type": "string"},
+                                    },
+                                },
+                            },
                         },
                     },
                 },
@@ -175,6 +201,8 @@ VIABLEOS_SCHEMA: dict[str, Any] = {
                     "properties": {
                         "reporting_rhythm": {"type": "string"},
                         "resource_allocation": {"type": "string"},
+                        "kpi_list": _STRING_ARRAY,
+                        "label": {"type": "string"},
                     },
                 },
                 "system_3_star": {
@@ -205,6 +233,7 @@ VIABLEOS_SCHEMA: dict[str, Any] = {
                             },
                         },
                         "on_failure": {"type": "string"},
+                        "label": {"type": "string"},
                     },
                 },
                 "system_4": {
@@ -219,6 +248,42 @@ VIABLEOS_SCHEMA: dict[str, Any] = {
                                 "technology": _STRING_ARRAY,
                                 "regulation": _STRING_ARRAY,
                             },
+                        },
+                        "label": {"type": "string"},
+                    },
+                },
+                "success_criteria": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": ["criterion", "priority"],
+                        "additionalProperties": False,
+                        "properties": {
+                            "criterion": {"type": "string"},
+                            "priority": {"type": "string"},
+                        },
+                    },
+                },
+                "shared_resources": _STRING_ARRAY,
+                "domain_flow": {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "properties": {
+                        "central_object": {"type": "string"},
+                        "flow_description": {"type": "string"},
+                        "feedback_loop": {"type": "string"},
+                    },
+                },
+                "dependencies": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": ["from", "to", "description"],
+                        "additionalProperties": False,
+                        "properties": {
+                            "from": {"type": "string"},
+                            "to": {"type": "string"},
+                            "description": {"type": "string"},
                         },
                     },
                 },

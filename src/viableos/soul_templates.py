@@ -15,6 +15,9 @@ def generate_s1_soul(
     coordination_rules: list[dict[str, Any]],
     hitl: dict[str, Any],
     other_units: list[str],
+    *,
+    dependencies: list[dict[str, Any]] | None = None,
+    domain_flow: dict[str, Any] | None = None,
 ) -> str:
     name = unit.get("name", "Unnamed Unit")
     purpose = unit.get("purpose", "")
@@ -24,6 +27,8 @@ def generate_s1_soul(
     never_do = identity.get("never_do", [])
     sys_purpose = identity.get("purpose", "")
     approval = hitl.get("approval_required", [])
+    sub_units = unit.get("sub_units", [])
+    domain_context = unit.get("domain_context", "")
 
     relevant_rules = [
         r for r in coordination_rules
@@ -41,6 +46,53 @@ def generate_s1_soul(
 {_bullet_list(never_do)}
 """
 
+    sub_units_section = ""
+    if sub_units:
+        su_lines = []
+        for su in sub_units:
+            prio = su.get("priority", "")
+            prio_label = f" (priority: {prio})" if prio else ""
+            su_lines.append(f"- **{su['name']}**: {su.get('purpose', '')}{prio_label}")
+        sub_units_section = f"""
+## Sub-modules you manage
+{chr(10).join(su_lines)}
+"""
+
+    domain_section = ""
+    if domain_context:
+        domain_section = f"""
+## Domain context
+{domain_context}
+"""
+
+    flow_section = ""
+    if domain_flow:
+        obj = domain_flow.get("central_object", "")
+        flow = domain_flow.get("flow_description", "")
+        fb = domain_flow.get("feedback_loop", "")
+        flow_section = f"""
+## Central object flow
+The central object is **{obj}**: {flow}
+"""
+        if fb:
+            flow_section += f"Feedback loop: {fb}\n"
+
+    dep_section = ""
+    if dependencies:
+        name_lower = name.lower()
+        incoming = [d for d in dependencies if d.get("to", "").lower() in name_lower or name_lower in d.get("to", "").lower()]
+        outgoing = [d for d in dependencies if d.get("from", "").lower() in name_lower or name_lower in d.get("from", "").lower()]
+        dep_lines = []
+        for d in incoming:
+            dep_lines.append(f"- **Receives from {d['from']}:** {d.get('description', '')}")
+        for d in outgoing:
+            dep_lines.append(f"- **Sends to {d['to']}:** {d.get('description', '')}")
+        if dep_lines:
+            dep_section = f"""
+## Dependencies
+{chr(10).join(dep_lines)}
+"""
+
     return f"""# {name}
 
 ## Identity refresh
@@ -50,7 +102,7 @@ Your purpose: {purpose}
 
 ## System purpose
 {sys_purpose}
-
+{sub_units_section}{domain_section}{flow_section}{dep_section}
 ## Values (always follow these)
 {_bullet_list(values)}
 {never_do_section}
@@ -101,7 +153,12 @@ def generate_s2_soul(
     coordination_rules: list[dict[str, Any]],
     s1_units: list[str],
     identity: dict[str, Any],
+    *,
+    shared_resources: list[str] | None = None,
+    domain_flow: dict[str, Any] | None = None,
+    label: str = "",
 ) -> str:
+    display_name = label or "Coordinator"
     sys_purpose = identity.get("purpose", "")
     never_do = identity.get("never_do", [])
     rules_text = "\n".join(
@@ -115,10 +172,29 @@ def generate_s2_soul(
 {_bullet_list(never_do)}
 """
 
-    return f"""# Coordinator
+    shared_section = ""
+    if shared_resources:
+        shared_section = f"""
+## Shared resources (coordinate access)
+{_bullet_list(shared_resources)}
+All units share these — you ensure no conflicts (e.g. concurrent deployments, DB migrations).
+"""
+
+    flow_section = ""
+    if domain_flow:
+        obj = domain_flow.get("central_object", "")
+        flow = domain_flow.get("flow_description", "")
+        if obj:
+            flow_section = f"""
+## Domain flow awareness
+The central object **{obj}** flows: {flow}
+You coordinate handoffs between units along this flow.
+"""
+
+    return f"""# {display_name}
 
 ## Identity refresh
-Re-read this at every interaction start. You are the Coordinator.
+Re-read this at every interaction start. You are the {display_name}.
 You do NOT take on operational tasks. You do NOT make decisions.
 
 ## Who you are
@@ -134,7 +210,7 @@ You are a RULE-BASED ENGINE, not a discussion partner.
 
 ## Coordination rules (ENFORCE THESE)
 {rules_text}
-
+{shared_section}{flow_section}
 ## Workspace isolation (CRITICAL)
 Each unit has its own workspace directory. You ENFORCE this:
 - Units NEVER access each other's files directly
@@ -154,7 +230,7 @@ Each unit has its own workspace directory. You ENFORCE this:
 ## Anti-echoing protocol
 When communicating with units:
 - Always re-state YOUR role before responding
-- Use structured format: {{"from": "Coordinator", "to": "unit_name", "type": "info|request|mediation", "content": "..."}}
+- Use structured format: {{"from": "{display_name}", "to": "unit_name", "type": "info|request|mediation", "content": "..."}}
 - Keep exchanges under 5 turns — then summarize and close
 - If you catch yourself mirroring a unit's language/role: STOP and re-read this SOUL.md
 
@@ -176,12 +252,34 @@ def generate_s3_soul(
     budget_monthly: float,
     resource_allocation: str,
     reporting_rhythm: str,
+    *,
+    kpi_list: list[str] | None = None,
+    success_criteria: list[dict[str, Any]] | None = None,
+    label: str = "",
 ) -> str:
+    display_name = label or "Optimizer"
     sys_purpose = identity.get("purpose", "")
-    return f"""# Optimizer
+
+    kpi_section = ""
+    if kpi_list:
+        kpi_section = f"""
+## KPIs to track
+{_bullet_list(kpi_list)}
+"""
+
+    criteria_section = ""
+    if success_criteria:
+        lines = [f"- **{c['criterion']}** (priority: {c.get('priority', '?')})" for c in success_criteria]
+        criteria_section = f"""
+## Success criteria (from assessment)
+{chr(10).join(lines)}
+Your reporting must cover progress against these criteria.
+"""
+
+    return f"""# {display_name}
 
 ## Identity refresh
-Re-read this at every interaction start. You are the Optimizer.
+Re-read this at every interaction start. You are the {display_name}.
 You manage resources and make operational decisions.
 
 ## Who you are
@@ -193,7 +291,7 @@ produces maximum value with available resources.
 
 ## Units you manage
 {_bullet_list(s1_units)}
-
+{kpi_section}{criteria_section}
 ## Resource allocation
 {resource_allocation or '(not specified — allocate based on priorities)'}
 
@@ -236,17 +334,20 @@ def generate_s3star_soul(
     checks: list[dict[str, Any]],
     s1_units: list[str],
     on_failure: str,
+    *,
+    label: str = "",
 ) -> str:
+    display_name = label or "Auditor"
     sys_purpose = identity.get("purpose", "")
     checks_text = "\n".join(
         f"- **{c['name']}** — Target: {c['target']}, Method: {c['method']}"
         for c in checks
     ) if checks else "- No audit checks defined yet."
 
-    return f"""# Auditor
+    return f"""# {display_name}
 
 ## Identity refresh
-Re-read this at every interaction start. You are the Auditor.
+Re-read this at every interaction start. You are the {display_name}.
 You are INDEPENDENT. You trust nobody. You verify everything.
 
 ## Who you are
@@ -309,13 +410,16 @@ Forensic. Precise. No speculation.
 def generate_s4_soul(
     identity: dict[str, Any],
     monitoring: dict[str, Any],
+    *,
+    label: str = "",
 ) -> str:
+    display_name = label or "Scout"
     sys_purpose = identity.get("purpose", "")
     competitors = monitoring.get("competitors", [])
     technology = monitoring.get("technology", [])
     regulation = monitoring.get("regulation", [])
 
-    return f"""# Scout
+    return f"""# {display_name}
 
 ## Who you are
 You are the Intelligence agent. You have two perspectives:
@@ -441,6 +545,34 @@ def generate_org_memory(config: dict[str, Any]) -> str:
     purpose = vs.get("identity", {}).get("purpose", "")
     units = vs.get("system_1", [])
     unit_names = [u.get("name", "?") for u in units]
+    shared_resources = vs.get("shared_resources", [])
+    domain_flow = vs.get("domain_flow")
+    success_criteria = vs.get("success_criteria", [])
+
+    shared_section = ""
+    if shared_resources:
+        shared_section = f"""
+## Shared Resources
+{_bullet_list(shared_resources)}
+"""
+
+    flow_section = ""
+    if domain_flow:
+        obj = domain_flow.get("central_object", "")
+        flow = domain_flow.get("flow_description", "")
+        if obj:
+            flow_section = f"""
+## Domain Flow
+Central object: **{obj}** — {flow}
+"""
+
+    criteria_section = ""
+    if success_criteria:
+        lines = [f"- {c['criterion']} ({c.get('priority', '?')})" for c in success_criteria]
+        criteria_section = f"""
+## Success Criteria
+{chr(10).join(lines)}
+"""
 
     return f"""# Organizational Memory — {name}
 
@@ -448,7 +580,7 @@ def generate_org_memory(config: dict[str, Any]) -> str:
 - Phase: Initial setup — agents not yet deployed
 - Active units: {', '.join(unit_names)}
 - System purpose: {purpose}
-
+{shared_section}{flow_section}{criteria_section}
 ## Recent Decisions
 - (none yet — system just created)
 

@@ -11,9 +11,11 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
+from viableos.assessment_transformer import load_assessment, transform_assessment
 from viableos.budget import calculate_budget
 from viableos.checker import ViabilityReport, check_viability
 from viableos.generator import generate_openclaw_package
+from viableos.langgraph_generator import generate_langgraph_package
 from viableos.schema import load_yaml, validate
 
 console = Console()
@@ -77,12 +79,18 @@ def init(output: str, name: str, purpose: str) -> None:
 @click.option(
     "--output",
     "-o",
-    default="./viableos-openclaw",
-    help="Output directory for the OpenClaw package",
+    default=None,
+    help="Output directory for the package",
     type=click.Path(),
 )
-def generate(config_path: str, output: str) -> None:
-    """Generate an OpenClaw deployment package from a ViableOS config."""
+@click.option(
+    "--runtime",
+    type=click.Choice(["openclaw", "langgraph"]),
+    default="openclaw",
+    help="Target runtime (openclaw or langgraph)",
+)
+def generate(config_path: str, output: str | None, runtime: str) -> None:
+    """Generate a deployment package from a ViableOS config."""
     config = load_yaml(config_path)
 
     errors = validate(config)
@@ -93,7 +101,15 @@ def generate(config_path: str, output: str) -> None:
         raise SystemExit(1)
 
     plan = calculate_budget(config)
-    out_path = generate_openclaw_package(config, output)
+
+    if runtime == "langgraph":
+        out_dir = output or "./viableos-langgraph"
+        out_path = generate_langgraph_package(config, out_dir)
+        runtime_label = "LangGraph"
+    else:
+        out_dir = output or "./viableos-openclaw"
+        out_path = generate_openclaw_package(config, out_dir)
+        runtime_label = "OpenClaw"
 
     vs = config.get("viable_system", {})
     system_name = vs.get("name", "Unknown")
@@ -101,9 +117,10 @@ def generate(config_path: str, output: str) -> None:
     console.print(
         Panel(
             f'System: [bold]"{system_name}"[/bold]\n'
+            f"Runtime: [cyan]{runtime_label}[/cyan]\n"
             f"Output: [cyan]{out_path}[/cyan]\n"
             f"Budget: [green]${plan.total_monthly_usd:.0f}/mo[/green] ({plan.strategy})",
-            title="[bold]ViableOS Package Generated[/bold]",
+            title=f"[bold]ViableOS {runtime_label} Package Generated[/bold]",
         )
     )
 
@@ -122,9 +139,96 @@ def generate(config_path: str, output: str) -> None:
         )
     console.print(table)
 
+    if runtime == "langgraph":
+        console.print(
+            f"\n  [bold green]✓[/bold green] LangGraph package generated"
+        )
+        console.print(f"  Deploy with: [bold]cd {out_path} && langgraph up[/bold]")
+    else:
+        console.print(
+            f"\n  [bold green]✓[/bold green] {len(list(out_path.glob('workspaces/*/SOUL.md')))} agents generated"
+        )
+        console.print(f"  Copy [cyan]{out_path}[/cyan] to your OpenClaw server and run [bold]bash install.sh[/bold]")
+
+
+@main.command("from-assessment")
+@click.argument("assessment_path", type=click.Path(exists=True))
+@click.option(
+    "--output",
+    "-o",
+    default="./viableos-openclaw",
+    help="Output directory for the OpenClaw package",
+    type=click.Path(),
+)
+@click.option(
+    "--save-config",
+    type=click.Path(),
+    help="Also save the transformed viable_system config to this path",
+)
+def from_assessment(assessment_path: str, output: str, save_config: str | None) -> None:
+    """Generate an OpenClaw package from an assessment_config.json."""
+    import json as json_mod
+
+    assessment = load_assessment(assessment_path)
+    system_name = assessment.get("system_name", "Unknown")
+    console.print(f"\n[bold]Transforming assessment:[/bold] {system_name}")
+
+    config = transform_assessment(assessment)
+
+    errors = validate(config)
+    if errors:
+        console.print("\n[bold red]Validation errors after transformation:[/bold red]")
+        for err in errors:
+            console.print(f"  • {err}")
+        raise SystemExit(1)
+
+    if save_config:
+        Path(save_config).write_text(
+            json_mod.dumps(config, indent=2, ensure_ascii=False) + "\n"
+        )
+        console.print(f"  [dim]Config saved to {save_config}[/dim]")
+
+    report = check_viability(config)
+    _print_report(assessment_path, system_name, report)
+
+    for w in report.warnings:
+        icon = {"info": "[dim]ℹ[/dim]", "warning": "[yellow]⚠[/yellow]", "critical": "[red]🚨[/red]"}.get(
+            w.severity, ""
+        )
+        console.print(f"  {icon} [{w.category}] {w.message}")
+        if w.suggestion:
+            console.print(f"    [dim]→ {w.suggestion}[/dim]")
+
+    plan = calculate_budget(config)
+    out_path = generate_openclaw_package(config, output)
+
     console.print(
-        f"\n  [bold green]✓[/bold green] {len(list(out_path.glob('workspaces/*/SOUL.md')))} agents generated"
+        Panel(
+            f'System: [bold]"{system_name}"[/bold]\n'
+            f"Source: [cyan]{assessment_path}[/cyan]\n"
+            f"Output: [cyan]{out_path}[/cyan]\n"
+            f"Budget: [green]${plan.total_monthly_usd:.0f}/mo[/green] ({plan.strategy})",
+            title="[bold]ViableOS Package Generated from Assessment[/bold]",
+        )
     )
+
+    table = Table(title="Agent Allocation")
+    table.add_column("Agent", style="bold")
+    table.add_column("Model")
+    table.add_column("Budget", justify="right")
+    table.add_column("Share", justify="right")
+
+    for alloc in plan.allocations:
+        table.add_row(
+            alloc.friendly_name,
+            alloc.model,
+            f"${alloc.monthly_usd:.0f}",
+            f"{alloc.percentage:.0f}%",
+        )
+    console.print(table)
+
+    agent_count = len(list(out_path.glob("workspaces/*/SOUL.md")))
+    console.print(f"\n  [bold green]✓[/bold green] {agent_count} agents generated from assessment")
     console.print(f"  Copy [cyan]{out_path}[/cyan] to your OpenClaw server and run [bold]bash install.sh[/bold]")
 
 

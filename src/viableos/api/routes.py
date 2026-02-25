@@ -33,6 +33,8 @@ from viableos.budget import (
 from viableos.checker import check_viability
 from viableos.coordination import generate_base_rules
 from viableos.generator import generate_openclaw_package
+from viableos.assessment_transformer import transform_assessment
+from viableos.langgraph_generator import generate_langgraph_package
 from viableos.schema import validate
 
 TEMPLATES_DIR = Path(__file__).parent.parent / "templates"
@@ -328,6 +330,12 @@ def auto_generate_rules(units: list[dict[str, Any]]) -> list[CoordinationRule]:
     ]
 
 
+@router.post("/assessment/transform")
+def transform_assessment_endpoint(assessment: dict[str, Any]) -> dict[str, Any]:
+    """Transform an assessment_config.json into a viable_system config."""
+    return transform_assessment(assessment)
+
+
 @router.post("/generate")
 def generate_package(config: dict[str, Any]) -> FileResponse:
     errors = validate(config)
@@ -342,5 +350,24 @@ def generate_package(config: dict[str, Any]) -> FileResponse:
     return FileResponse(
         path=zip_path,
         filename="viableos-openclaw.zip",
+        media_type="application/zip",
+    )
+
+
+@router.post("/generate/langgraph")
+def generate_langgraph(config: dict[str, Any]) -> FileResponse:
+    """Generate a LangGraph deployment package."""
+    errors = validate(config)
+    if errors:
+        raise HTTPException(status_code=422, detail=errors)
+
+    tmp_dir = tempfile.mkdtemp()
+    out_path = generate_langgraph_package(config, Path(tmp_dir) / "viableos-langgraph")
+
+    zip_path = shutil.make_archive(str(out_path), "zip", str(out_path))
+
+    return FileResponse(
+        path=zip_path,
+        filename="viableos-langgraph.zip",
         media_type="application/zip",
     )

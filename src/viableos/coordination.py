@@ -106,6 +106,39 @@ def generate_workspace_isolation_rules(s1_units: list[dict[str, Any]]) -> list[d
     return directives
 
 
+def generate_dependency_rules(dependencies: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Generate coordination rules from explicit inter-unit dependencies.
+
+    Each dependency (from → to with description) becomes a rule the
+    Coordinator must enforce.
+    """
+    rules: list[dict[str, Any]] = []
+    for dep in dependencies:
+        src = dep.get("from", "?")
+        tgt = dep.get("to", "?")
+        desc = dep.get("description", "")
+        rules.append({
+            "trigger": f"{src} produces output for {tgt}: {desc}",
+            "action": f"Coordinator routes {desc} from {src} to {tgt} and confirms receipt",
+        })
+    return rules
+
+
+def generate_shared_resource_rules(shared_resources: list[str]) -> list[dict[str, Any]]:
+    """Generate coordination rules for shared resources.
+
+    Shared resources (e.g. one database, one deployment pipeline) need
+    Coordinator mediation to prevent conflicts.
+    """
+    rules: list[dict[str, Any]] = []
+    for resource in shared_resources:
+        rules.append({
+            "trigger": f"Multiple units need concurrent access to: {resource}",
+            "action": f"Coordinator sequences access to {resource} — no parallel modifications",
+        })
+    return rules
+
+
 def generate_agent_communication_matrix(s1_agent_ids: list[str]) -> dict[str, Any]:
     """Generate the VSM communication permission matrix for openclaw.json.
 

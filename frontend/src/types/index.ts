@@ -153,3 +153,79 @@ export interface Presets {
   agent_reliability_labels: Record<string, string>;
   strategy_presets: string[];
 }
+
+// ── Chat Types ──────────────────────────────────────────────
+
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: number;
+}
+
+export interface AssessmentConfig {
+  system_name: string;
+  purpose: string;
+  team?: { size: number; roles?: string[] };
+  recursion_levels?: Record<string, unknown>;
+  dependencies?: Record<string, unknown>;
+  shared_resources?: string[];
+  external_forces?: Array<{ name: string; type?: string; frequency?: string }>;
+  metasystem?: Record<string, unknown>;
+  success_criteria?: Array<{ criterion: string; priority: number }>;
+  [key: string]: unknown;
+}
+
+// ── Ops Room Types ──────────────────────────────────────────
+
+export type RuntimeType = 'openclaw' | 'langgraph';
+
+export interface OpsConnection {
+  runtime: RuntimeType;
+  url: string;
+  apiKey: string;
+  connected: boolean;
+}
+
+export type AgentStatus = 'online' | 'working' | 'error' | 'offline';
+
+export interface OpsAgent {
+  id: string;
+  name: string;
+  role: string;
+  status: AgentStatus;
+  lastSeen?: string;
+  currentTask?: string;
+}
+
+export interface OpsActivity {
+  id: string;
+  timestamp: string;
+  agent: string;
+  type: string;
+  summary: string;
+}
+
+export interface OpsSignal {
+  id: string;
+  timestamp: string;
+  source: string;
+  urgency: 'low' | 'medium' | 'high' | 'critical';
+  message: string;
+}
+
+export interface OpsWorkPackage {
+  id: string;
+  title: string;
+  assignee: string;
+  status: 'queued' | 'active' | 'done';
+  created: string;
+}
+
+export interface OpsDecision {
+  id: string;
+  title: string;
+  description: string;
+  requestedBy: string;
+  timestamp: string;
+  status: 'pending' | 'approved' | 'rejected';
+}

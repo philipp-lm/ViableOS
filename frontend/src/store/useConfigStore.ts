@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import type { Config, ViableSystem } from '../types';
+import type { Config, ViableSystem, AssessmentConfig } from '../types';
 import { api } from '../api/client';
 
 const EMPTY_CONFIG: Config = {
@@ -11,17 +11,24 @@ const EMPTY_CONFIG: Config = {
   },
 };
 
+type View = 'chat' | 'wizard' | 'dashboard' | 'opsroom';
+
 interface ConfigStore {
   config: Config;
   wizardStep: number;
-  view: 'wizard' | 'dashboard';
+  view: View;
   templateKey: string | null;
+  runtimeTarget: 'openclaw' | 'langgraph';
+  assessmentData: AssessmentConfig | null;
 
   setConfig: (config: Config) => void;
   updateVs: (partial: Partial<ViableSystem>) => void;
   loadTemplate: (key: string) => Promise<void>;
   setWizardStep: (step: number) => void;
-  setView: (view: 'wizard' | 'dashboard') => void;
+  setView: (view: View) => void;
+  setRuntimeTarget: (target: 'openclaw' | 'langgraph') => void;
+  setAssessmentData: (data: AssessmentConfig | null) => void;
+  loadFromAssessment: (config: Config) => void;
   resetConfig: () => void;
 }
 
@@ -30,8 +37,10 @@ export const useConfigStore = create<ConfigStore>()(
     (set, get) => ({
       config: EMPTY_CONFIG,
       wizardStep: 0,
-      view: 'wizard',
+      view: 'chat',
       templateKey: null,
+      runtimeTarget: 'openclaw',
+      assessmentData: null,
 
       setConfig: (config) => set({ config }),
 
@@ -54,7 +63,15 @@ export const useConfigStore = create<ConfigStore>()(
 
       setView: (view) => set({ view }),
 
-      resetConfig: () => set({ config: EMPTY_CONFIG, templateKey: null, wizardStep: 0, view: 'wizard' }),
+      setRuntimeTarget: (runtimeTarget) => set({ runtimeTarget }),
+
+      setAssessmentData: (assessmentData) => set({ assessmentData }),
+
+      loadFromAssessment: (config) => {
+        set({ config, templateKey: 'assessment', wizardStep: 0 });
+      },
+
+      resetConfig: () => set({ config: EMPTY_CONFIG, templateKey: null, wizardStep: 0, view: 'chat', assessmentData: null }),
     }),
     {
       name: 'viableos-store',

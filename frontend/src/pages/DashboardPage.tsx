@@ -9,10 +9,10 @@ import { ViabilityChecklist } from '../components/dashboard/ViabilityChecklist';
 import { AgentCards } from '../components/dashboard/AgentCards';
 import { HitlSummary } from '../components/dashboard/HitlSummary';
 import { ExportPanel } from '../components/dashboard/ExportPanel';
-import { Pencil } from 'lucide-react';
+import { Pencil, Radio } from 'lucide-react';
 
 export function DashboardPage() {
-  const { config, setView, setWizardStep } = useConfigStore();
+  const { config, setView, setWizardStep, runtimeTarget } = useConfigStore();
   const vs = config.viable_system;
   const plan = useBudget(config);
   const report = useViabilityCheck(config);
@@ -34,13 +34,28 @@ export function DashboardPage() {
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">{vs.name}</h1>
-        <button
-          onClick={() => { setView('wizard'); setWizardStep(0); }}
-          className="flex items-center gap-2 px-4 py-2 text-sm text-[var(--color-muted)] border border-[var(--color-border)] rounded-lg hover:border-[var(--color-primary)] hover:text-[var(--color-text)] transition-all"
-        >
-          <Pencil className="w-3.5 h-3.5" /> Edit in Wizard
-        </button>
+        <div>
+          <h1 className="text-2xl font-bold">{vs.name}</h1>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-xs text-[var(--color-muted)]">
+              Runtime: <span className="text-[var(--color-accent)]">{runtimeTarget}</span>
+            </span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setView('opsroom')}
+            className="flex items-center gap-2 px-4 py-2 text-sm text-[var(--color-accent)] border border-[var(--color-accent)]/30 rounded-lg hover:bg-[var(--color-accent)]/10 transition-all"
+          >
+            <Radio className="w-3.5 h-3.5" /> Operations Room
+          </button>
+          <button
+            onClick={() => { setView('wizard'); setWizardStep(0); }}
+            className="flex items-center gap-2 px-4 py-2 text-sm text-[var(--color-muted)] border border-[var(--color-border)] rounded-lg hover:border-[var(--color-primary)] hover:text-[var(--color-text)] transition-all"
+          >
+            <Pencil className="w-3.5 h-3.5" /> Edit in Wizard
+          </button>
+        </div>
       </div>
 
       {plan && report && <MetricsBar plan={plan} report={report} />}

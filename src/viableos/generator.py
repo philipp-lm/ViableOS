@@ -16,6 +16,8 @@ from viableos.budget import calculate_budget, get_fallback_chain, get_heartbeat_
 from viableos.coordination import (
     generate_agent_communication_matrix,
     generate_base_rules,
+    generate_dependency_rules,
+    generate_shared_resource_rules,
     merge_rules,
 )
 from viableos.soul_templates import (
@@ -542,8 +544,15 @@ def generate_openclaw_package(
     s4_cfg = vs.get("system_4", {})
     monitoring = s4_cfg.get("monitoring", {})
 
+    dependencies = vs.get("dependencies", [])
+    shared_resources = vs.get("shared_resources", [])
+    domain_flow = vs.get("domain_flow")
+    success_criteria = vs.get("success_criteria", [])
+
     auto_rules = generate_base_rules(s1_units)
-    coord_rules = merge_rules(auto_rules, manual_rules)
+    dep_rules = generate_dependency_rules(dependencies) if dependencies else []
+    shared_rules = generate_shared_resource_rules(shared_resources) if shared_resources else []
+    coord_rules = merge_rules(auto_rules, manual_rules + dep_rules + shared_rules)
 
     plan = calculate_budget(config)
     s1_names = [u.get("name", "?") for u in s1_units]
@@ -569,7 +578,10 @@ def generate_openclaw_package(
         ws_path.mkdir()
 
         other_units = [n for n in s1_names if n != name]
-        soul = generate_s1_soul(unit, identity, coord_rules, hitl, other_units)
+        soul = generate_s1_soul(
+            unit, identity, coord_rules, hitl, other_units,
+            dependencies=dependencies, domain_flow=domain_flow,
+        )
         (ws_path / "SOUL.md").write_text(soul)
         (ws_path / "SKILL.md").write_text(_generate_s1_skill(unit, identity))
         (ws_path / "HEARTBEAT.md").write_text(_generate_s1_heartbeat(unit))
@@ -604,14 +616,19 @@ def generate_openclaw_package(
     ws_path = workspaces_dir / slug
     ws_path.mkdir()
     s2_model = plan.model_routing.get("s2_coordination", "")
-    soul = generate_s2_soul(coord_rules, s1_names, identity)
+    s2_label = vs.get("system_2", {}).get("label", "")
+    s2_display = s2_label or "Coordinator"
+    soul = generate_s2_soul(
+        coord_rules, s1_names, identity,
+        shared_resources=shared_resources, domain_flow=domain_flow, label=s2_label,
+    )
     (ws_path / "SOUL.md").write_text(soul)
     (ws_path / "SKILL.md").write_text(_generate_s2_skill(s1_names))
     (ws_path / "HEARTBEAT.md").write_text(_generate_s2_heartbeat())
     (ws_path / "USER.md").write_text(user_md)
-    (ws_path / "MEMORY.md").write_text(_generate_memory_md("Coordinator", "Coordination (S2)"))
+    (ws_path / "MEMORY.md").write_text(_generate_memory_md(s2_display, "Coordination (S2)"))
     all_agents.append(
-        {"name": "Coordinator", "role": "Coordination (S2)", "purpose": "Prevent conflicts between units"}
+        {"name": s2_display, "role": "Coordination (S2)", "purpose": "Prevent conflicts between units"}
     )
     openclaw_agents.append(
         _make_agent_entry(
@@ -627,17 +644,22 @@ def generate_openclaw_package(
     ws_path = workspaces_dir / slug
     ws_path.mkdir()
     s3_model = plan.model_routing.get("s3_optimization", "")
+    s3_label = s3_cfg.get("label", "")
+    s3_display = s3_label or "Optimizer"
     soul = generate_s3_soul(
         identity, s1_names, plan.total_monthly_usd,
         s3_cfg.get("resource_allocation", ""), s3_cfg.get("reporting_rhythm", ""),
+        kpi_list=s3_cfg.get("kpi_list"),
+        success_criteria=success_criteria if success_criteria else None,
+        label=s3_label,
     )
     (ws_path / "SOUL.md").write_text(soul)
     (ws_path / "SKILL.md").write_text(_generate_s3_skill(plan.total_monthly_usd))
     (ws_path / "HEARTBEAT.md").write_text(_generate_s3_heartbeat())
     (ws_path / "USER.md").write_text(user_md)
-    (ws_path / "MEMORY.md").write_text(_generate_memory_md("Optimizer", "Optimization (S3)"))
+    (ws_path / "MEMORY.md").write_text(_generate_memory_md(s3_display, "Optimization (S3)"))
     all_agents.append(
-        {"name": "Optimizer", "role": "Optimization (S3)", "purpose": "Allocate resources, weekly digest"}
+        {"name": s3_display, "role": "Optimization (S3)", "purpose": "Allocate resources, weekly digest"}
     )
     openclaw_agents.append(
         _make_agent_entry(
@@ -653,16 +675,18 @@ def generate_openclaw_package(
     ws_path = workspaces_dir / slug
     ws_path.mkdir()
     s3star_model = plan.model_routing.get("s3_star_audit", "")
+    s3star_label = s3star_cfg.get("label", "")
+    s3star_display = s3star_label or "Auditor"
     checks = s3star_cfg.get("checks", [])
     on_failure = s3star_cfg.get("on_failure", "Escalate to human immediately")
-    soul = generate_s3star_soul(identity, checks, s1_names, on_failure)
+    soul = generate_s3star_soul(identity, checks, s1_names, on_failure, label=s3star_label)
     (ws_path / "SOUL.md").write_text(soul)
     (ws_path / "SKILL.md").write_text(_generate_s3star_skill())
     (ws_path / "HEARTBEAT.md").write_text(_generate_s3star_heartbeat())
     (ws_path / "USER.md").write_text(user_md)
-    (ws_path / "MEMORY.md").write_text(_generate_memory_md("Auditor", "Audit (S3*)"))
+    (ws_path / "MEMORY.md").write_text(_generate_memory_md(s3star_display, "Audit (S3*)"))
     all_agents.append(
-        {"name": "Auditor", "role": "Audit (S3*)", "purpose": "Independent quality verification"}
+        {"name": s3star_display, "role": "Audit (S3*)", "purpose": "Independent quality verification"}
     )
     openclaw_agents.append(
         _make_agent_entry(
@@ -679,14 +703,16 @@ def generate_openclaw_package(
     ws_path = workspaces_dir / slug
     ws_path.mkdir()
     s4_model = plan.model_routing.get("s4_intelligence", "")
-    soul = generate_s4_soul(identity, monitoring)
+    s4_label = s4_cfg.get("label", "")
+    s4_display = s4_label or "Scout"
+    soul = generate_s4_soul(identity, monitoring, label=s4_label)
     (ws_path / "SOUL.md").write_text(soul)
     (ws_path / "SKILL.md").write_text(_generate_s4_skill(monitoring))
     (ws_path / "HEARTBEAT.md").write_text(_generate_s4_heartbeat())
     (ws_path / "USER.md").write_text(user_md)
-    (ws_path / "MEMORY.md").write_text(_generate_memory_md("Scout", "Intelligence (S4)"))
+    (ws_path / "MEMORY.md").write_text(_generate_memory_md(s4_display, "Intelligence (S4)"))
     all_agents.append(
-        {"name": "Scout", "role": "Intelligence (S4)", "purpose": "Monitor environment, strategic briefs"}
+        {"name": s4_display, "role": "Intelligence (S4)", "purpose": "Monitor environment, strategic briefs"}
     )
     openclaw_agents.append(
         _make_agent_entry(
