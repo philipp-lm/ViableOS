@@ -8,31 +8,53 @@ Built from real community pain points: token cost management, agent looping, wor
 
 ## What it does
 
+### Design & Configuration
+- **AI-Guided Assessment** — Chat with a VSM expert that interviews you about your organization and auto-generates a complete config
 - **Guided Setup Wizard** — 6-step web wizard: template, identity, teams, budget & models, human-in-the-loop, review
 - **12 Organization Templates** — SaaS, E-Commerce, Agency, Content Creator, Consulting, Law Firm, Accounting, Education, and more
 - **Smart Budget Calculator** — Maps monthly USD budget to per-agent model allocations with 23 models across 7 providers
 - **Per-Unit Control** — Individual model selection and budget weighting for each S1 unit and S2-S5 system
+
+### Behavioral Specifications
+- **Operational Modes** — Normal / Elevated / Crisis with mode-dependent autonomy, reporting frequency, and escalation thresholds
+- **Escalation Chains** — Operational, quality, strategic, and algedonic paths with per-step timeouts
+- **Vollzug Protocol** — Directive tracking: acknowledge → execute → report, with timeout escalation
+- **Autonomy Matrix** — Per-unit definition of what agents can do alone, what needs coordination, what needs approval
+- **Conflict Detection & Transduction** — S2 detects resource overlaps, deadline conflicts, output contradictions
+- **Triple Index** — S3 tracks actuality, capability, and potentiality with deviation logic
+- **Algedonic Channel** — Emergency bypass that lets any agent signal existential issues directly to S5/human
+
+### Generation & Validation
 - **OpenClaw Package Generator** — Creates SOUL.md, SKILL.md, HEARTBEAT.md, USER.md, MEMORY.md, AGENTS.md per agent
+- **LangGraph Export** — Export configs as LangGraph-compatible Python packages
 - **Auto-Generated Coordination Rules** — Anti-looping, workspace isolation, structured communication
 - **Agent-to-Agent Permission Matrix** — VSM-based communication model (S1 talks to S2 only, S3* has read-only audit)
 - **Model Fallback Chains** — Automatic fallbacks with cross-provider redundancy
-- **Viability Checker** — Community-driven warnings for token budgets, model reliability, security, rollout readiness
+- **Viability Checker** — 6 VSM completeness checks + community-driven warnings + behavioral spec validation
 - **Visual Dashboard** — VSM system map, budget chart, model routing, agent cards, warnings panel, export
 
 ## Architecture
 
 ```
-React Frontend (TypeScript + Tailwind)
+React Frontend (TypeScript + Tailwind CSS 4)
         |
-        | HTTP/JSON
+        | HTTP/JSON + SSE streaming
         v
-FastAPI Backend (Python)
+FastAPI Backend (Python + LiteLLM)
         |
         v
-Core Library (schema, budget, checker, generator, coordination, soul_templates)
+Core Library
+├── schema.py              # JSON Schema validation
+├── assessment_transformer  # Assessment → ViableSystem config
+├── budget.py              # Token budget calculator
+├── checker.py             # VSM completeness + behavioral spec checks
+├── generator.py           # OpenClaw package generator
+├── soul_templates.py      # Per-agent SOUL/SKILL/HEARTBEAT content
+├── coordination.py        # Auto-generated coordination rules
+└── chat/                  # LLM assessment interview engine
 ```
 
-The core library is framework-independent. The FastAPI layer wraps it as a REST API. The React frontend provides the wizard and dashboard.
+The core library is framework-independent. The FastAPI layer wraps it as a REST API. The React frontend provides the wizard, chat, and dashboard.
 
 ## Quick Start
 
@@ -84,16 +106,16 @@ viableos generate viableos.yaml        # Generate OpenClaw package
 
 ## VSM Systems
 
-| System | Role | Generated Files |
+| System | Role | Behavioral Specs |
 |---|---|---|
-| S1 | Operations — the units that do the actual work | SOUL.md, SKILL.md (tool scoping, autonomy boundaries), HEARTBEAT.md (30min task check) |
-| S2 | Coordination — prevents conflicts between units | SOUL.md, SKILL.md (coordination protocol), HEARTBEAT.md (continuous routing) |
-| S3 | Optimization — allocates resources, weekly digest | SOUL.md, SKILL.md (reporting protocol, budget tracking), HEARTBEAT.md (hourly token check) |
-| S3* | Audit — independent quality checks (different provider) | SOUL.md, SKILL.md (audit protocol, read-only access), HEARTBEAT.md (4h random audit) |
-| S4 | Intelligence — monitors environment, strategic briefs | SOUL.md, SKILL.md (intelligence protocol), HEARTBEAT.md (daily source scan) |
-| S5 | Identity — enforces values, prepares human decisions | SOUL.md, SKILL.md (policy protocol), HEARTBEAT.md (weekly policy review) |
+| S1 | Operations — the units that do the actual work | Autonomy matrix, operational modes, vollzug protocol |
+| S2 | Coordination — prevents conflicts between units | Conflict detection, transduction mappings, escalation routing |
+| S3 | Optimization — allocates resources, tracks KPIs | Triple index (actuality/capability/potentiality), deviation logic, intervention authority |
+| S3* | Audit — independent quality checks (different provider) | Provider constraint (anti-correlation), independence rules, read-only access |
+| S4 | Intelligence — monitors environment, strategic briefs | Premises register, strategy bridge, weak signal detection |
+| S5 | Identity — enforces values, prepares human decisions | Balance monitoring (S3/S4), algedonic channel, basta constraint |
 
-Every agent also gets USER.md, MEMORY.md, and AGENTS.md.
+Every agent gets SOUL.md, SKILL.md, HEARTBEAT.md, AGENTS.md, USER.md, and MEMORY.md.
 
 ## Generated Package Structure
 
@@ -101,9 +123,9 @@ Every agent also gets USER.md, MEMORY.md, and AGENTS.md.
 viableos-openclaw/
 ├── workspaces/
 │   ├── s1-product-dev/          # One workspace per agent
-│   │   ├── SOUL.md              # Identity, values, boundaries
+│   │   ├── SOUL.md              # Identity, values, behavioral specs
 │   │   ├── SKILL.md             # Guardrails, protocols, anti-looping
-│   │   ├── HEARTBEAT.md         # Scheduled tasks
+│   │   ├── HEARTBEAT.md         # Scheduled tasks, mode-dependent frequencies
 │   │   ├── AGENTS.md            # Awareness of other agents
 │   │   ├── USER.md              # Human operator info
 │   │   └── MEMORY.md            # Structured memory template
@@ -119,7 +141,7 @@ viableos-openclaw/
 └── install.sh                   # Phased rollout script
 ```
 
-## Model Support (Feb 2026)
+## Model Support (Mar 2026)
 
 23 models across 7 providers with agent reliability ratings:
 
@@ -133,7 +155,7 @@ viableos-openclaw/
 | Meta | Llama 4 | Self-hostable |
 | Ollama | Llama 4, Mistral Large, DeepSeek v3 | Local models |
 
-The auditor (S3*) automatically uses a different provider than your S1 agents.
+The auditor (S3*) automatically uses a different provider than your S1 agents to prevent correlated hallucinations.
 
 ## Community-Driven Design
 
@@ -152,28 +174,34 @@ Built from real pain points reported by multi-agent practitioners:
 ```bash
 pip install -e ".[dev]"
 
-# Run tests (89 tests)
+# Backend tests (245 tests)
 pytest tests/ -v
 
 # Lint
 ruff check src/ tests/
 
-# Frontend type check
-cd frontend && npx tsc --noEmit
+# Frontend
+cd frontend && npm install
+npx tsc --noEmit          # Type check
+npx vitest run             # Unit tests
+npx playwright test        # E2E tests
 ```
 
 ## Tech Stack
 
-**Backend:** Python, FastAPI, Pydantic, PyYAML, jsonschema
+**Backend:** Python, FastAPI, LiteLLM, Pydantic, PyYAML, jsonschema
 **Frontend:** React 19, TypeScript, Tailwind CSS 4, Zustand, Recharts, Vite
+**Testing:** pytest (245 tests), Vitest, Playwright
 **Deployment:** Docker Compose (nginx + uvicorn)
 
 ## Roadmap
 
 - [x] v0.1 — YAML schema, VSM completeness checker, CLI
-- [x] v0.2 — Web wizard, dashboard, budget calculator, OpenClaw generator, 12 templates, community insights, React + FastAPI
-- [ ] v0.3 — Live agent monitoring, real OpenClaw integration, token usage tracking
-- [ ] v0.4 — Multi-runtime support (LangGraph, CrewAI, custom)
+- [x] v0.2 — Web wizard, dashboard, budget calculator, OpenClaw generator, 12 templates, React + FastAPI
+- [x] v0.2.1 — Chat-based assessment interview, file upload, SSE streaming, LangGraph export
+- [x] v0.2.2 — **Behavioral specifications**: operational modes, escalation chains, vollzug protocol, autonomy matrix, conflict detection, triple index, algedonic channel
+- [ ] v0.3 — Runtime engine: execute generated packages, live agent monitoring, Operations Room
+- [ ] v0.4 — Multi-runtime support (LangGraph, CrewAI, custom), benchmark integration
 
 ## License
 
