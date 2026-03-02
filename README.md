@@ -6,6 +6,8 @@ ViableOS applies the [Viable System Model](https://en.wikipedia.org/wiki/Viable_
 
 Built from real community pain points: token cost management, agent looping, workspace conflicts, model reliability, and the gap between demo and production.
 
+![Dashboard](docs/screenshots/dashboard.png)
+
 ## What it does
 
 ### Design & Configuration
@@ -32,6 +34,16 @@ Built from real community pain points: token cost management, agent looping, wor
 - **Model Fallback Chains** — Automatic fallbacks with cross-provider redundancy
 - **Viability Checker** — 6 VSM completeness checks + community-driven warnings + behavioral spec validation
 - **Visual Dashboard** — VSM system map, budget chart, model routing, agent cards, warnings panel, export
+
+### Screenshots
+
+| Chat Assessment | Wizard Templates | Budget & Models |
+|:---:|:---:|:---:|
+| ![Chat](docs/screenshots/chat.png) | ![Templates](docs/screenshots/wizard-templates.png) | ![Budget](docs/screenshots/wizard-budget.png) |
+
+| Review & Warnings | Identity & Values | Units |
+|:---:|:---:|:---:|
+| ![Review](docs/screenshots/wizard-review.png) | ![Identity](docs/screenshots/wizard-identity.png) | ![Units](docs/screenshots/wizard-units.png) |
 
 ## Architecture
 
