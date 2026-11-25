@@ -30,6 +30,7 @@ viableos = "viableos.cli:main"
 streamlit = ["streamlit>=1.30", "plotly>=5.0"]
 dev = [
     "pytest>=7.0",
+    "pytest-asyncio>=0.23",
     "ruff>=0.1",
 ]
 
