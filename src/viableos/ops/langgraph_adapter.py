@@ -7,6 +7,7 @@ Connects to a running LangGraph Platform instance via its REST API
 from __future__ import annotations
 
 from typing import Any
+from urllib.parse import urlsplit
 
 import httpx
 
@@ -19,6 +20,10 @@ class LangGraphAdapter(RuntimeAdapter):
         self._base_url = ""
 
     async def connect(self, url: str, api_key: str) -> bool:
+        try:
+            _ = urlsplit(url).port  # raises ValueError if the port is out of range
+        except ValueError:
+            return False
         self._base_url = url.rstrip("/")
         headers: dict[str, str] = {}
         if api_key:
